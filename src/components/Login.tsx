@@ -103,23 +103,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     cursor: 'pointer',
   }
 
-  // 自定义输入框样式
-  const inputStyle = {
-    height: '48px',
-    fontSize: '16px',
-    backgroundColor: '#f5f5f5',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0 16px',
-    transition: 'all 0.3s ease'
-  }
-
-  const inputFocusStyle = {
-    backgroundColor: '#ffffff',
-    boxShadow: '0 0 0 2px rgba(22, 119, 255, 0.1)',
-    border: '1px solid #1677ff'
-  }
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -206,15 +189,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 style={{ marginBottom: '20px' }}
               >
                 <Input
-                  prefix={<UserOutlined style={{ color: '#999999', fontSize: '16px' }} />}
+                  prefix={<UserOutlined style={{ color: '#999999' }} />}
                   placeholder="用户名: admin or user"
-                  style={inputStyle}
-                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-                  onBlur={(e) => {
-                    e.target.style.backgroundColor = '#f5f5f5'
-                    e.target.style.border = 'none'
-                    e.target.style.boxShadow = 'none'
-                  }}
                 />
               </Form.Item>
 
@@ -224,15 +200,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 style={{ marginBottom: '24px' }}
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: '#999999', fontSize: '16px' }} />}
+                  prefix={<LockOutlined style={{ color: '#999999' }} />}
                   placeholder="密码: admin123"
-                  style={inputStyle}
-                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-                  onBlur={(e) => {
-                    e.target.style.backgroundColor = '#f5f5f5'
-                    e.target.style.border = 'none'
-                    e.target.style.boxShadow = 'none'
-                  }}
                 />
               </Form.Item>
             </>
@@ -249,15 +218,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 style={{ marginBottom: '20px' }}
               >
                 <Input
-                  prefix={<MobileOutlined style={{ color: '#999999', fontSize: '16px' }} />}
+                  prefix={<MobileOutlined style={{ color: '#999999' }} />}
                   placeholder="手机号"
-                  style={inputStyle}
-                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-                  onBlur={(e) => {
-                    e.target.style.backgroundColor = '#f5f5f5'
-                    e.target.style.border = 'none'
-                    e.target.style.boxShadow = 'none'
-                  }}
                 />
               </Form.Item>
 
@@ -268,29 +230,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               >
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <Input
-                    prefix={<LockOutlined style={{ color: '#999999', fontSize: '16px' }} />}
+                    prefix={<LockOutlined style={{ color: '#999999' }} />}
                     placeholder="请输入验证码"
-                    style={{ ...inputStyle, flex: 1 }}
-                    onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
-                    onBlur={(e) => {
-                      e.target.style.backgroundColor = '#f5f5f5'
-                      e.target.style.border = 'none'
-                      e.target.style.boxShadow = 'none'
-                    }}
+                    style={{ flex: 1 }}
                   />
                   <Button 
                     onClick={handleGetCaptcha}
                     loading={captchaLoading}
                     disabled={countdown > 0}
-                    style={{ 
-                      height: '48px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      minWidth: '100px',
-                      backgroundColor: '#f5f5f5',
-                      border: 'none',
-                      color: countdown > 0 ? '#999999' : '#1677ff'
-                    }}
+                    style={{ minWidth: '100px' }}
                   >
                     {countdown > 0 ? `${countdown}s` : '获取验证码'}
                   </Button>
@@ -329,11 +277,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               block
               style={{ 
                 height: '48px',
-                borderRadius: '8px',
                 fontSize: '16px',
-                fontWeight: 500,
-                backgroundColor: '#1677ff',
-                border: 'none'
+                fontWeight: 500
               }}
             >
               登录
