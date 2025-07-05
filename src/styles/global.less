@@ -110,7 +110,7 @@ a {
 .generate-spacing-classes(@prefix, @property, @max: 5) {
   .loop(@i) when (@i <= @max) {
     .@{prefix}-@{i} {
-      @{property}: (@i * var(--ant-padding-xs));
+      @{property}: (@i * @ant-padding-xs-value);
     }
     .loop(@i + 1);
   }
@@ -122,16 +122,38 @@ a {
 .generate-spacing-classes(mr, margin-right);
 .generate-spacing-classes(mb, margin-bottom);
 .generate-spacing-classes(ml, margin-left);
-.generate-spacing-classes(mx, margin-left margin-right);
-.generate-spacing-classes(my, margin-top margin-bottom);
 
 .generate-spacing-classes(p, padding);
 .generate-spacing-classes(pt, padding-top);
 .generate-spacing-classes(pr, padding-right);
 .generate-spacing-classes(pb, padding-bottom);
 .generate-spacing-classes(pl, padding-left);
-.generate-spacing-classes(px, padding-left padding-right);
-.generate-spacing-classes(py, padding-top padding-bottom);
+
+// 生成复合间距类 (mx, my, px, py)
+.generate-compound-spacing(@max: 5) {
+  .loop(@i) when (@i <= @max) {
+    .mx-@{i} {
+      margin-left: (@i * @ant-padding-xs-value);
+      margin-right: (@i * @ant-padding-xs-value);
+    }
+    .my-@{i} {
+      margin-top: (@i * @ant-padding-xs-value);
+      margin-bottom: (@i * @ant-padding-xs-value);
+    }
+    .px-@{i} {
+      padding-left: (@i * @ant-padding-xs-value);
+      padding-right: (@i * @ant-padding-xs-value);
+    }
+    .py-@{i} {
+      padding-top: (@i * @ant-padding-xs-value);
+      padding-bottom: (@i * @ant-padding-xs-value);
+    }
+    .loop(@i + 1);
+  }
+  .loop(1);
+}
+
+.generate-compound-spacing();
 
 // 响应式工具类
 @media (max-width: 575px) {
