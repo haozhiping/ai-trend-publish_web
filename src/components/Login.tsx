@@ -69,13 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <ProConfigProvider hashed={false}>
-      <div style={{ 
-        backgroundColor: '#f0f2f5',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
+      <div style={{ backgroundColor: token.colorBgContainer }}>
         <LoginForm
           logo="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDQiIGhlaWdodD0iNDQiIHZpZXdCb3g9IjAgMCA0NCA0NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ0IiBoZWlnaHQ9IjQ0IiByeD0iOCIgZmlsbD0iIzE2NzdGRiIvPgo8cGF0aCBkPSJNMjIgMTJMMzAgMjJMMjIgMzJMMTQgMjJMMjIgMTJaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K"
           title="AI 趋势发布系统"
@@ -94,17 +88,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             centered
             activeKey={loginType}
             onChange={(activeKey) => setLoginType(activeKey as LoginType)}
-            items={[
-              {
-                key: 'account',
-                label: '账号密码登录',
-              },
-              {
-                key: 'phone',
-                label: '手机号登录',
-              },
-            ]}
-          />
+          >
+            <Tabs.TabPane key={'account'} tab={'账号密码登录'} />
+            <Tabs.TabPane key={'phone'} tab={'手机号登录'} />
+          </Tabs>
           
           {loginType === 'account' && (
             <>
