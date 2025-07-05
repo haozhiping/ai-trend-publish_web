@@ -14,7 +14,8 @@ import {
   ConfigProvider,
   Breadcrumb,
   Divider,
-  Flex
+  Flex,
+  message
 } from 'antd'
 import {
   DashboardOutlined,
@@ -35,7 +36,10 @@ import {
   GithubOutlined,
   HomeOutlined,
   SearchOutlined,
-  DownOutlined
+  DownOutlined,
+  EditOutlined,
+  KeyOutlined,
+  GlobalOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -45,6 +49,9 @@ import DataSources from './pages/DataSources'
 import PublishHistory from './pages/PublishHistory'
 import ConfigManagement from './pages/ConfigManagement'
 import SystemLogs from './pages/SystemLogs'
+import Login from './components/Login'
+import UserProfile from './components/UserProfile'
+import GlobalSearch from './components/GlobalSearch'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -107,11 +114,42 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark'
   })
+  
+  // 用户认证状态
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('token')
+  })
+  
+  const [userInfo, setUserInfo] = useState(() => {
+    const saved = localStorage.getItem('userInfo')
+    return saved ? JSON.parse(saved) : null
+  })
+
+  // 模态框状态
+  const [profileVisible, setProfileVisible] = useState(false)
+  const [searchVisible, setSearchVisible] = useState(false)
+
+  // 通知数量
+  const [notificationCount, setNotificationCount] = useState(3)
 
   // 设置 HTML 根元素的 data-theme 属性
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
+
+  // 检查认证状态
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const savedUserInfo = localStorage.getItem('userInfo')
+    
+    if (token && savedUserInfo) {
+      setIsAuthenticated(true)
+      setUserInfo(JSON.parse(savedUserInfo))
+    } else {
+      setIsAuthenticated(false)
+      setUserInfo(null)
+    }
+  }, [])
 
   const toggleTheme = () => {
     setDarkMode((prev) => {
@@ -121,6 +159,40 @@ function App() {
       return newTheme
     })
   }
+
+  const handleLogin = (user: any) => {
+    setIsAuthenticated(true)
+    setUserInfo(user)
+    message.success(`欢迎回来，${user.name}！`)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    setIsAuthenticated(false)
+    setUserInfo(null)
+    navigate('/')
+    message.success('已安全退出')
+  }
+
+  const handleUpdateUser = (updatedUser: any) => {
+    setUserInfo(updatedUser)
+    localStorage.setItem('userInfo', JSON.stringify(updatedUser))
+  }
+
+  // 键盘快捷键
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + K 打开搜索
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setSearchVisible(true)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const currentMenuItem = menuItems.find(item => item.key === location.pathname)
 
@@ -145,8 +217,17 @@ function App() {
   const userMenuItems = [
     {
       key: 'profile',
-      icon: <UserOutlined />,
-      label: '个人设置'
+      icon: <EditOutlined />,
+      label: '个人设置',
+      onClick: () => setProfileVisible(true)
+    },
+    {
+      key: 'security',
+      icon: <KeyOutlined />,
+      label: '安全中心'
+    },
+    {
+      type: 'divider'
     },
     {
       key: 'help',
@@ -156,7 +237,8 @@ function App() {
     {
       key: 'github',
       icon: <GithubOutlined />,
-      label: 'GitHub'
+      label: 'GitHub',
+      onClick: () => window.open('https://github.com', '_blank')
     },
     {
       type: 'divider'
@@ -165,7 +247,8 @@ function App() {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: '退出登录',
-      danger: true
+      danger: true,
+      onClick: handleLogout
     }
   ]
 
@@ -180,6 +263,9 @@ function App() {
       wireframe: false,
       fontSize: 14,
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+      boxShadowSecondary: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
+      boxShadowTertiary: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
     },
     algorithm: darkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     components: {
@@ -200,7 +286,9 @@ function App() {
         iconSize: 16,
         fontSize: 14,
         itemHeight: 40,
-        collapsedIconSize: 16
+        collapsedIconSize: 16,
+        itemBorderRadius: 6,
+        itemMarginInline: 4
       },
       Card: {
         headerBg: darkMode ? '#141414' : '#fafafa',
@@ -222,11 +310,24 @@ function App() {
       Table: {
         headerBg: darkMode ? '#1f1f1f' : '#fafafa',
         rowHoverBg: darkMode ? '#262626' : '#f5f5f5'
+      },
+      Modal: {
+        borderRadiusLG: 12
+      },
+      Dropdown: {
+        borderRadiusOuter: 8
       }
     }
   }), [darkMode])
 
-  const { token } = antdTheme.useToken()
+  // 如果未认证，显示登录页面
+  if (!isAuthenticated) {
+    return (
+      <ConfigProvider theme={themeConfig}>
+        <Login onLogin={handleLogin} />
+      </ConfigProvider>
+    )
+  }
 
   return (
     <ConfigProvider theme={themeConfig}>
@@ -300,7 +401,8 @@ function App() {
             style={{
               borderInlineEnd: 0,
               background: 'transparent',
-              marginTop: 8
+              marginTop: 8,
+              paddingInline: 8
             }}
           />
         </Sider>
@@ -352,10 +454,11 @@ function App() {
             </Flex>
 
             <Flex align="center" gap={8}>
-              <Tooltip title="搜索">
+              <Tooltip title="全局搜索 (Ctrl+K)">
                 <Button
                   type="text"
                   icon={<SearchOutlined />}
+                  onClick={() => setSearchVisible(true)}
                   style={{ 
                     fontSize: 16,
                     width: 32,
@@ -365,8 +468,8 @@ function App() {
                 />
               </Tooltip>
 
-              <Tooltip title="通知">
-                <Badge count={3} size="small">
+              <Tooltip title="通知中心">
+                <Badge count={notificationCount} size="small">
                   <Button
                     type="text"
                     icon={<BellOutlined />}
@@ -402,15 +505,11 @@ function App() {
 
               <Dropdown
                 menu={{ 
-                  items: userMenuItems,
-                  onClick: ({ key }) => {
-                    if (key === 'logout') {
-                      console.log('退出登录')
-                    }
-                  }
+                  items: userMenuItems
                 }}
                 placement="bottomRight"
                 arrow
+                trigger={['click']}
               >
                 <Button type="text" style={{ 
                   cursor: 'pointer', 
@@ -424,6 +523,7 @@ function App() {
                         background: 'linear-gradient(135deg, #1677ff, #69c0ff)'
                       }}
                       icon={<UserOutlined />}
+                      src={userInfo?.avatar}
                     />
                     <Flex vertical style={{ alignItems: 'flex-start' }}>
                       <Text style={{ 
@@ -432,10 +532,10 @@ function App() {
                         lineHeight: 1.2,
                         color: darkMode ? '#ffffff' : '#000000'
                       }}>
-                        管理员
+                        {userInfo?.name || '管理员'}
                       </Text>
                       <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>
-                        admin@example.com
+                        {userInfo?.email || 'admin@example.com'}
                       </Text>
                     </Flex>
                     <DownOutlined style={{ 
@@ -474,6 +574,20 @@ function App() {
           </Content>
         </Layout>
       </Layout>
+
+      {/* 用户设置模态框 */}
+      <UserProfile
+        visible={profileVisible}
+        onClose={() => setProfileVisible(false)}
+        userInfo={userInfo}
+        onUpdateUser={handleUpdateUser}
+      />
+
+      {/* 全局搜索模态框 */}
+      <GlobalSearch
+        visible={searchVisible}
+        onClose={() => setSearchVisible(false)}
+      />
     </ConfigProvider>
   )
 }

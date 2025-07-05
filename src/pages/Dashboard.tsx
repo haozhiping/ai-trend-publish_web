@@ -14,7 +14,10 @@ import {
   Typography,
   Tooltip,
   Flex,
-  theme
+  theme,
+  Segmented,
+  DatePicker,
+  Select
 } from 'antd'
 import { 
   ArrowUpOutlined, 
@@ -36,8 +39,10 @@ import {
   MonitorOutlined,
   SettingOutlined,
   EyeOutlined,
-  RiseOutlined,
-  LineChartOutlined
+  LineChartOutlined,
+  CalendarOutlined,
+  FilterOutlined,
+  MoreOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
@@ -51,13 +56,20 @@ import {
   Area, 
   PieChart, 
   Pie, 
-  Cell 
+  Cell,
+  BarChart,
+  Bar
 } from 'recharts'
+import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
+const { RangePicker } = DatePicker
+const { Option } = Select
 
 const Dashboard: React.FC = () => {
   const { token } = theme.useToken()
+  const [timeRange, setTimeRange] = useState<string>('7d')
+  const [chartType, setChartType] = useState<string>('area')
   
   const [systemStatus] = useState({
     status: 'running',
@@ -115,13 +127,13 @@ const Dashboard: React.FC = () => {
   ])
 
   const [chartData] = useState([
-    { name: '周一', articles: 8, success: 8, views: 1200 },
-    { name: '周二', articles: 12, success: 11, views: 1800 },
-    { name: '周三', articles: 15, success: 14, views: 2200 },
-    { name: '周四', articles: 10, success: 10, views: 1500 },
-    { name: '周五', articles: 18, success: 17, views: 2800 },
-    { name: '周六', articles: 14, success: 13, views: 2100 },
-    { name: '周日', articles: 16, success: 16, views: 2400 }
+    { name: '周一', articles: 8, success: 8, views: 1200, users: 45 },
+    { name: '周二', articles: 12, success: 11, views: 1800, users: 67 },
+    { name: '周三', articles: 15, success: 14, views: 2200, users: 89 },
+    { name: '周四', articles: 10, success: 10, views: 1500, users: 56 },
+    { name: '周五', articles: 18, success: 17, views: 2800, users: 123 },
+    { name: '周六', articles: 14, success: 13, views: 2100, users: 78 },
+    { name: '周日', articles: 16, success: 16, views: 2400, users: 92 }
   ])
 
   const [pieData] = useState([
@@ -131,10 +143,10 @@ const Dashboard: React.FC = () => {
   ])
 
   const [apiQuotas] = useState([
-    { name: 'DeepSeek API', used: 75, total: 100, color: token.colorSuccess, amount: '¥45.60' },
-    { name: 'FireCrawl API', used: 85, total: 100, color: token.colorWarning, amount: '150 次' },
-    { name: 'Twitter API', used: 40, total: 100, color: token.colorPrimary, amount: '3000 次' },
-    { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90' }
+    { name: 'DeepSeek API', used: 75, total: 100, color: token.colorSuccess, amount: '¥45.60', trend: -5 },
+    { name: 'FireCrawl API', used: 85, total: 100, color: token.colorWarning, amount: '150 次', trend: 12 },
+    { name: 'Twitter API', used: 40, total: 100, color: token.colorPrimary, amount: '3000 次', trend: -2 },
+    { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90', trend: 8 }
   ])
 
   const handleSystemControl = (action: string) => {
@@ -147,7 +159,8 @@ const Dashboard: React.FC = () => {
       style={{
         borderRadius: 12,
         border: `1px solid ${token.colorBorderSecondary}`,
-        boxShadow: token.boxShadowTertiary
+        boxShadow: token.boxShadowTertiary,
+        transition: 'all 0.3s ease'
       }}
       bodyStyle={{ padding: 24 }}
     >
@@ -197,6 +210,164 @@ const Dashboard: React.FC = () => {
       </Flex>
     </Card>
   )
+
+  const renderChart = () => {
+    const commonProps = {
+      width: "100%",
+      height: 320,
+      data: chartData
+    }
+
+    if (chartType === 'area') {
+      return (
+        <ResponsiveContainer {...commonProps}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={token.colorPrimary} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={token.colorPrimary} stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={token.colorSuccess} stopOpacity={0.3}/>
+                <stop offset="95%" stopColor={token.colorSuccess} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
+            <XAxis 
+              dataKey="name" 
+              stroke={token.colorTextTertiary} 
+              fontSize={12}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis 
+              stroke={token.colorTextTertiary} 
+              fontSize={12}
+              axisLine={false}
+              tickLine={false}
+            />
+            <RechartsTooltip 
+              contentStyle={{ 
+                borderRadius: 8, 
+                border: `1px solid ${token.colorBorderSecondary}`,
+                boxShadow: token.boxShadow,
+                fontSize: 12,
+                backgroundColor: token.colorBgElevated
+              }}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="articles" 
+              stroke={token.colorPrimary} 
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorArticles)"
+              name="发布文章"
+            />
+            <Area 
+              type="monotone" 
+              dataKey="views" 
+              stroke={token.colorSuccess} 
+              strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorViews)"
+              name="阅读量"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    if (chartType === 'line') {
+      return (
+        <ResponsiveContainer {...commonProps}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
+            <XAxis 
+              dataKey="name" 
+              stroke={token.colorTextTertiary} 
+              fontSize={12}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis 
+              stroke={token.colorTextTertiary} 
+              fontSize={12}
+              axisLine={false}
+              tickLine={false}
+            />
+            <RechartsTooltip 
+              contentStyle={{ 
+                borderRadius: 8, 
+                border: `1px solid ${token.colorBorderSecondary}`,
+                boxShadow: token.boxShadow,
+                fontSize: 12,
+                backgroundColor: token.colorBgElevated
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="articles" 
+              stroke={token.colorPrimary} 
+              strokeWidth={3}
+              dot={{ fill: token.colorPrimary, strokeWidth: 2, r: 4 }}
+              name="发布文章"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="views" 
+              stroke={token.colorSuccess} 
+              strokeWidth={3}
+              dot={{ fill: token.colorSuccess, strokeWidth: 2, r: 4 }}
+              name="阅读量"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    return (
+      <ResponsiveContainer {...commonProps}>
+        <BarChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
+          <XAxis 
+            dataKey="name" 
+            stroke={token.colorTextTertiary} 
+            fontSize={12}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis 
+            stroke={token.colorTextTertiary} 
+            fontSize={12}
+            axisLine={false}
+            tickLine={false}
+          />
+          <RechartsTooltip 
+            contentStyle={{ 
+              borderRadius: 8, 
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadow,
+              fontSize: 12,
+              backgroundColor: token.colorBgElevated
+            }}
+          />
+          <Bar 
+            dataKey="articles" 
+            fill={token.colorPrimary}
+            radius={[4, 4, 0, 0]}
+            name="发布文章"
+          />
+          <Bar 
+            dataKey="views" 
+            fill={token.colorSuccess}
+            radius={[4, 4, 0, 0]}
+            name="阅读量"
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
 
   return (
     <div style={{ animation: 'fadeInUp 0.6s ease-out' }}>
@@ -303,8 +474,29 @@ const Dashboard: React.FC = () => {
             }
             extra={
               <Space>
-                <Tag color="blue">近7天</Tag>
-                <Button size="small" type="link">查看详情</Button>
+                <Select
+                  value={timeRange}
+                  onChange={setTimeRange}
+                  size="small"
+                  style={{ width: 100 }}
+                >
+                  <Option value="7d">近7天</Option>
+                  <Option value="30d">近30天</Option>
+                  <Option value="90d">近90天</Option>
+                </Select>
+                <Segmented
+                  value={chartType}
+                  onChange={setChartType}
+                  options={[
+                    { label: '面积图', value: 'area', icon: <AreaChartOutlined /> },
+                    { label: '折线图', value: 'line', icon: <LineChartOutlined /> },
+                    { label: '柱状图', value: 'bar', icon: <BarChartOutlined /> }
+                  ]}
+                  size="small"
+                />
+                <Button size="small" type="link" icon={<MoreOutlined />}>
+                  更多
+                </Button>
               </Space>
             }
             style={{
@@ -313,61 +505,7 @@ const Dashboard: React.FC = () => {
               boxShadow: token.boxShadowTertiary
             }}
           >
-            <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={chartData}>
-                <defs>
-                  <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={token.colorPrimary} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={token.colorPrimary} stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={token.colorSuccess} stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor={token.colorSuccess} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke={token.colorTextTertiary} 
-                  fontSize={12}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis 
-                  stroke={token.colorTextTertiary} 
-                  fontSize={12}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <RechartsTooltip 
-                  contentStyle={{ 
-                    borderRadius: 8, 
-                    border: `1px solid ${token.colorBorderSecondary}`,
-                    boxShadow: token.boxShadow,
-                    fontSize: 12,
-                    backgroundColor: token.colorBgElevated
-                  }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="articles" 
-                  stroke={token.colorPrimary} 
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorArticles)"
-                  name="发布文章"
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="views" 
-                  stroke={token.colorSuccess} 
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorViews)"
-                  name="阅读量"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {renderChart()}
           </Card>
         </Col>
 
@@ -379,6 +517,11 @@ const Dashboard: React.FC = () => {
                 <PieChartOutlined style={{ color: token.colorSuccess }} />
                 <span>发布平台分布</span>
               </Flex>
+            }
+            extra={
+              <Button size="small" type="link">
+                详细报告
+              </Button>
             }
             style={{
               borderRadius: 12,
@@ -440,7 +583,14 @@ const Dashboard: React.FC = () => {
                 <span>最近活动</span>
               </Flex>
             }
-            extra={<Button size="small" type="link">查看全部</Button>}
+            extra={
+              <Space>
+                <Button size="small" icon={<FilterOutlined />}>
+                  筛选
+                </Button>
+                <Button size="small" type="link">查看全部</Button>
+              </Space>
+            }
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
@@ -498,7 +648,14 @@ const Dashboard: React.FC = () => {
                 <span>API 额度监控</span>
               </Flex>
             }
-            extra={<Button size="small" type="link">管理配置</Button>}
+            extra={
+              <Space>
+                <Button size="small" icon={<SettingOutlined />}>
+                  配置
+                </Button>
+                <Button size="small" type="link">管理配置</Button>
+              </Space>
+            }
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
@@ -509,7 +666,18 @@ const Dashboard: React.FC = () => {
               {apiQuotas.map((quota, index) => (
                 <div key={index}>
                   <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
-                    <Text strong style={{ fontSize: 14 }}>{quota.name}</Text>
+                    <Flex align="center" gap={8}>
+                      <Text strong style={{ fontSize: 14 }}>{quota.name}</Text>
+                      {quota.trend && (
+                        <Tag 
+                          color={quota.trend > 0 ? 'error' : 'success'} 
+                          size="small"
+                          icon={quota.trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                        >
+                          {Math.abs(quota.trend)}%
+                        </Tag>
+                      )}
+                    </Flex>
                     <Text type="secondary" style={{ fontSize: 12 }}>剩余: {quota.amount}</Text>
                   </Flex>
                   <Progress 
@@ -541,6 +709,11 @@ const Dashboard: React.FC = () => {
                 <MonitorOutlined style={{ color: token.colorPrimary }} />
                 <span>系统资源</span>
               </Flex>
+            }
+            extra={
+              <Button size="small" type="link" icon={<MoreOutlined />}>
+                详情
+              </Button>
             }
             style={{
               borderRadius: 12,
@@ -594,6 +767,11 @@ const Dashboard: React.FC = () => {
                 <span>工作流状态</span>
               </Flex>
             }
+            extra={
+              <Button size="small" type="link">
+                管理
+              </Button>
+            }
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
@@ -639,6 +817,11 @@ const Dashboard: React.FC = () => {
                 <HeartOutlined style={{ color: token.colorError }} />
                 <span>系统健康度</span>
               </Flex>
+            }
+            extra={
+              <Button size="small" type="link">
+                报告
+              </Button>
             }
             style={{
               borderRadius: 12,
