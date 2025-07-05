@@ -1,0 +1,72 @@
+// 全局变量定义
+@import '~antd/es/style/themes/default.less';
+
+// 主题色彩变量
+:root {
+  // 主色调
+  --ant-primary-color: #1677ff;
+  --ant-primary-color-hover: #4096ff;
+  --ant-primary-color-active: #0958d9;
+  --ant-primary-color-outline: rgba(22, 119, 255, 0.2);
+  
+  // 功能色
+  --ant-success-color: #00b96b;
+  --ant-warning-color: #faad14;
+  --ant-error-color: #ff4d4f;
+  --ant-info-color: #1677ff;
+  
+  // 中性色
+  --ant-text-color: rgba(0, 0, 0, 0.88);
+  --ant-text-color-secondary: rgba(0, 0, 0, 0.65);
+  --ant-text-color-tertiary: rgba(0, 0, 0, 0.45);
+  --ant-text-color-quaternary: rgba(0, 0, 0, 0.25);
+  
+  // 背景色
+  --ant-background-color-light: #fafafa;
+  --ant-background-color-base: #f5f5f5;
+  --ant-component-background: #ffffff;
+  
+  // 边框色
+  --ant-border-color-base: #d9d9d9;
+  --ant-border-color-split: #f0f0f0;
+  
+  // 阴影
+  --ant-shadow-1-up: 0 -6px 16px 0 rgba(0, 0, 0, 0.08), 0 -3px 6px -4px rgba(0, 0, 0, 0.12), 0 -9px 28px 8px rgba(0, 0, 0, 0.05);
+  --ant-shadow-1-down: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  --ant-shadow-1-left: -6px 0 16px 0 rgba(0, 0, 0, 0.08), -3px 0 6px -4px rgba(0, 0, 0, 0.12), -9px 0 28px 8px rgba(0, 0, 0, 0.05);
+  --ant-shadow-1-right: 6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05);
+  --ant-shadow-2: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+  
+  // 圆角
+  --ant-border-radius-base: 6px;
+  --ant-border-radius-sm: 4px;
+  --ant-border-radius-lg: 8px;
+  
+  // 间距
+  --ant-padding-xs: 8px;
+  --ant-padding-sm: 12px;
+  --ant-padding-md: 16px;
+  --ant-padding-lg: 24px;
+  --ant-padding-xl: 32px;
+  
+  // 字体
+  --ant-font-size-base: 14px;
+  --ant-font-size-lg: 16px;
+  --ant-font-size-sm: 12px;
+  --ant-line-height-base: 1.5715;
+}
+
+// 暗色主题变量
+[data-theme='dark'] {
+  --ant-text-color: rgba(255, 255, 255, 0.85);
+  --ant-text-color-secondary: rgba(255, 255, 255, 0.65);
+  --ant-text-color-tertiary: rgba(255, 255, 255, 0.45);
+  --ant-text-color-quaternary: rgba(255, 255, 255, 0.25);
+  
+  --ant-background-color-light: #141414;
+  --ant-background-color-base: #000000;
+  --ant-component-background: #141414;
+  
+  --ant-border-color-base: #424242;
+  --ant-border-color-split: #303030;
+}
