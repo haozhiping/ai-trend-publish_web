@@ -19,7 +19,8 @@ import {
   DeleteOutlined, 
   SearchOutlined,
   FilterOutlined,
-  ExportOutlined
+  ExportOutlined,
+  DownloadOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
