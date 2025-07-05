@@ -15,7 +15,9 @@ import {
   DownloadOutlined, 
   ClearOutlined,
   PauseOutlined,
-  PlayCircleOutlined
+  PlayCircleOutlined,
+  SearchOutlined,
+  FilterOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import JsonView from '@uiw/react-json-view'
@@ -246,6 +248,7 @@ const SystemLogs: React.FC = () => {
             <Search
               placeholder="搜索日志内容"
               style={{ width: 250 }}
+              prefix={<SearchOutlined />}
               onSearch={(value) => setFilters(prev => ({ ...prev, search: value }))}
               allowClear
             />

@@ -296,7 +296,7 @@ const Dashboard: React.FC = () => {
           <Card 
             title={
               <Flex align="center" gap={8}>
-                <RiseOutlined style={{ color: token.colorPrimary }} />
+                <LineChartOutlined style={{ color: token.colorPrimary }} />
                 <span>发布趋势分析</span>
               </Flex>
             }

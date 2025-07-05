@@ -350,7 +350,10 @@ const DataSources: React.FC = () => {
             <Select placeholder="请选择数据源类型">
               {sourceTypes.map(type => (
                 <Option key={type.value} value={type.value}>
-                  {type.icon} {type.label}
+                  <Space>
+                    {type.icon}
+                    {type.label}
+                  </Space>
                 </Option>
               ))}
             </Select>

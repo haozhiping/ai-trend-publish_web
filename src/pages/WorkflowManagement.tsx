@@ -12,7 +12,8 @@ import {
   Switch,
   message,
   Popconfirm,
-  Tooltip
+  Tooltip,
+  Input
 } from 'antd'
 import { 
   PlayCircleOutlined, 
@@ -306,7 +307,7 @@ const WorkflowManagement: React.FC = () => {
             label="工作流名称"
             rules={[{ required: true, message: '请输入工作流名称' }]}
           >
-            <input placeholder="请输入工作流名称" />
+            <Input placeholder="请输入工作流名称" />
           </Form.Item>
 
           <Form.Item
@@ -335,7 +336,7 @@ const WorkflowManagement: React.FC = () => {
             name="description"
             label="描述"
           >
-            <input placeholder="请输入工作流描述" />
+            <Input.TextArea placeholder="请输入工作流描述" />
           </Form.Item>
         </Form>
       </Modal>

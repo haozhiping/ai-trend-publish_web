@@ -400,38 +400,49 @@ function App() {
               }} />
 
               <Dropdown
-                menu={{ items: userMenuItems }}
+                menu={{ 
+                  items: userMenuItems,
+                  onClick: ({ key }) => {
+                    if (key === 'logout') {
+                      console.log('退出登录')
+                    }
+                  }
+                }}
                 placement="bottomRight"
-                arrow={{ pointAtCenter: true }}
+                arrow
               >
-                <Flex align="center" gap={8} style={{ 
+                <Button type="text" style={{ 
                   cursor: 'pointer', 
-                  padding: '4px 8px', 
-                  borderRadius: 8,
-                  transition: 'background-color 0.2s'
+                  height: 'auto',
+                  padding: '4px 8px'
                 }}>
-                  <Avatar 
-                    size={32}
-                    style={{ 
-                      background: 'linear-gradient(135deg, #1677ff, #69c0ff)',
-                      border: `2px solid ${darkMode ? '#303030' : '#f0f0f0'}`
-                    }}
-                    icon={<UserOutlined />}
-                  />
-                  <Flex vertical style={{ alignItems: 'flex-start' }}>
-                    <Text style={{ 
-                      fontSize: 14, 
-                      fontWeight: 500, 
-                      lineHeight: 1.2,
-                      color: darkMode ? '#ffffff' : '#000000'
-                    }}>
-                      管理员
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>
-                      admin@example.com
-                    </Text>
+                  <Flex align="center" gap={8}>
+                    <Avatar 
+                      size={32}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #1677ff, #69c0ff)'
+                      }}
+                      icon={<UserOutlined />}
+                    />
+                    <Flex vertical style={{ alignItems: 'flex-start' }}>
+                      <Text style={{ 
+                        fontSize: 14, 
+                        fontWeight: 500, 
+                        lineHeight: 1.2,
+                        color: darkMode ? '#ffffff' : '#000000'
+                      }}>
+                        管理员
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>
+                        admin@example.com
+                      </Text>
+                    </Flex>
+                    <DownOutlined style={{ 
+                      fontSize: 12, 
+                      color: darkMode ? '#ffffff' : '#000000' 
+                    }} />
                   </Flex>
-                </Flex>
+                </Button>
               </Dropdown>
             </Flex>
           </Header>

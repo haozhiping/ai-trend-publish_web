@@ -18,8 +18,8 @@ import {
   EditOutlined, 
   DeleteOutlined, 
   EyeOutlined,
-  UploadOutlined,
-  CopyOutlined
+  CopyOutlined,
+  StarOutlined
 } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
 
@@ -211,7 +211,11 @@ const TemplateManagement: React.FC = () => {
                       <img
                         alt={template.name}
                         src={template.preview}
-                        style={{ height: 200, objectFit: 'cover' }}
+                        {template.isDefault && (
+                          <Tag color="gold" icon={<StarOutlined />}>
+                            默认
+                          </Tag>
+                        )}
                       />
                     }
                     actions={[

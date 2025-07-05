@@ -244,7 +244,10 @@ const PublishHistory: React.FC = () => {
       <Card
         title="发布历史"
         extra={
-          <Button icon={<ExportOutlined />}>
+          <Button 
+            icon={<DownloadOutlined />}
+            type="default"
+          >
             导出记录
           </Button>
         }

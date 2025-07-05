@@ -220,9 +220,18 @@ const ContentManagement: React.FC = () => {
         title="内容管理"
         extra={
           <Space>
-            <Button icon={<ExportOutlined />}>导出</Button>
+            <Button 
+              icon={<DownloadOutlined />}
+              type="default"
+            >
+              导出
+            </Button>
             {selectedRowKeys.length > 0 && (
-              <Button danger onClick={handleBatchDelete}>
+              <Button 
+                danger 
+                onClick={handleBatchDelete}
+                icon={<DeleteOutlined />}
+              >
                 批量删除 ({selectedRowKeys.length})
               </Button>
             )}

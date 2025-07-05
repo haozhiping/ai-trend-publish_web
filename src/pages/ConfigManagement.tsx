@@ -54,7 +54,7 @@ const ConfigManagement: React.FC = () => {
   const SecretInput: React.FC<{ field: string; placeholder: string }> = ({ field, placeholder }) => (
     <Input.Password
       placeholder={placeholder}
-      iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+      iconRender={(visible) => visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
     />
   )
 
