@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Layout, 
@@ -107,10 +107,17 @@ function App() {
     return localStorage.getItem('theme') === 'dark'
   })
 
+  // 设置 HTML 根元素的 data-theme 属性
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+
   const toggleTheme = () => {
     setDarkMode((prev) => {
-      localStorage.setItem('theme', !prev ? 'dark' : 'light')
-      return !prev
+      const newTheme = !prev
+      localStorage.setItem('theme', newTheme ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', newTheme ? 'dark' : 'light')
+      return newTheme
     })
   }
 
@@ -161,8 +168,6 @@ function App() {
     }
   ]
 
-  const { token } = antdTheme.useToken()
-
   const themeConfig = useMemo(() => ({
     token: {
       colorPrimary: '#1677ff',
@@ -173,7 +178,7 @@ function App() {
       borderRadius: 8,
       wireframe: false,
       fontSize: 14,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     algorithm: darkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     components: {
@@ -212,9 +217,15 @@ function App() {
       Select: {
         borderRadius: 6,
         controlHeight: 32
+      },
+      Table: {
+        headerBg: darkMode ? '#1f1f1f' : '#fafafa',
+        rowHoverBg: darkMode ? '#262626' : '#f5f5f5'
       }
     }
   }), [darkMode])
+
+  const { token } = antdTheme.useToken()
 
   return (
     <ConfigProvider theme={themeConfig}>
@@ -226,8 +237,8 @@ function App() {
           width={256}
           collapsedWidth={64}
           style={{
-            background: token.colorBgContainer,
-            borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
+            background: darkMode ? '#001529' : '#ffffff',
+            borderInlineEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
             position: 'fixed',
             insetInlineStart: 0,
             top: 0,
@@ -235,7 +246,7 @@ function App() {
             height: '100vh',
             zIndex: 200,
             boxShadow: darkMode 
-              ? '6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05)'
+              ? '6px 0 16px 0 rgba(0, 0, 0, 0.3), 3px 0 6px -4px rgba(0, 0, 0, 0.5), 9px 0 28px 8px rgba(0, 0, 0, 0.2)'
               : '6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05)'
           }}
         >
@@ -246,8 +257,8 @@ function App() {
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? 0 : '0 24px',
-            borderBlockEnd: `1px solid ${token.colorBorderSecondary}`,
-            background: token.colorBgContainer
+            borderBlockEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
+            background: darkMode ? '#001529' : '#ffffff'
           }}>
             <Flex align="center" gap={12}>
               <div style={{
@@ -267,7 +278,7 @@ function App() {
               </div>
               {!collapsed && (
                 <Text style={{ 
-                  color: token.colorText,
+                  color: darkMode ? '#ffffff' : '#000000',
                   fontSize: 16,
                   fontWeight: 600,
                   letterSpacing: '0.5px'
@@ -299,8 +310,8 @@ function App() {
         }}>
           {/* 顶部导航 */}
           <Header style={{
-            background: token.colorBgContainer,
-            borderBlockEnd: `1px solid ${token.colorBorderSecondary}`,
+            background: darkMode ? '#141414' : '#ffffff',
+            borderBlockEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -309,7 +320,9 @@ function App() {
             position: 'sticky',
             top: 0,
             zIndex: 100,
-            boxShadow: '0 1px 4px rgba(0,21,41,.08)'
+            boxShadow: darkMode 
+              ? '0 1px 4px rgba(0,0,0,.3)' 
+              : '0 1px 4px rgba(0,21,41,.08)'
           }}>
             <Flex align="center" gap={16}>
               <Button
@@ -319,13 +332,21 @@ function App() {
                 style={{ 
                   fontSize: 16,
                   width: 32,
-                  height: 32
+                  height: 32,
+                  color: darkMode ? '#ffffff' : '#000000'
                 }}
               />
-              <Divider type="vertical" style={{ height: 24, margin: 0 }} />
+              <Divider type="vertical" style={{ 
+                height: 24, 
+                margin: 0,
+                borderColor: darkMode ? '#303030' : '#f0f0f0'
+              }} />
               <Breadcrumb 
                 items={breadcrumbItems}
-                style={{ fontSize: 14 }}
+                style={{ 
+                  fontSize: 14,
+                  color: darkMode ? '#ffffff' : '#000000'
+                }}
               />
             </Flex>
 
@@ -337,7 +358,8 @@ function App() {
                   style={{ 
                     fontSize: 16,
                     width: 32,
-                    height: 32
+                    height: 32,
+                    color: darkMode ? '#ffffff' : '#000000'
                   }}
                 />
               </Tooltip>
@@ -350,7 +372,8 @@ function App() {
                     style={{ 
                       fontSize: 16,
                       width: 32,
-                      height: 32
+                      height: 32,
+                      color: darkMode ? '#ffffff' : '#000000'
                     }}
                   />
                 </Badge>
@@ -364,12 +387,17 @@ function App() {
                   style={{ 
                     fontSize: 16,
                     width: 32,
-                    height: 32
+                    height: 32,
+                    color: darkMode ? '#ffffff' : '#000000'
                   }}
                 />
               </Tooltip>
 
-              <Divider type="vertical" style={{ height: 24, margin: '0 8px' }} />
+              <Divider type="vertical" style={{ 
+                height: 24, 
+                margin: '0 8px',
+                borderColor: darkMode ? '#303030' : '#f0f0f0'
+              }} />
 
               <Dropdown
                 menu={{ items: userMenuItems }}
@@ -380,16 +408,13 @@ function App() {
                   cursor: 'pointer', 
                   padding: '4px 8px', 
                   borderRadius: 8,
-                  transition: 'background-color 0.2s',
-                  ':hover': {
-                    backgroundColor: token.colorBgTextHover
-                  }
+                  transition: 'background-color 0.2s'
                 }}>
                   <Avatar 
                     size={32}
                     style={{ 
                       background: 'linear-gradient(135deg, #1677ff, #69c0ff)',
-                      border: `2px solid ${token.colorBorder}`
+                      border: `2px solid ${darkMode ? '#303030' : '#f0f0f0'}`
                     }}
                     icon={<UserOutlined />}
                   />
@@ -398,7 +423,7 @@ function App() {
                       fontSize: 14, 
                       fontWeight: 500, 
                       lineHeight: 1.2,
-                      color: token.colorText
+                      color: darkMode ? '#ffffff' : '#000000'
                     }}>
                       管理员
                     </Text>
@@ -415,7 +440,7 @@ function App() {
           <Content style={{
             margin: 0,
             minHeight: 'calc(100vh - 64px)',
-            background: token.colorBgLayout,
+            background: darkMode ? '#000000' : '#f5f5f5',
             padding: 24,
             overflow: 'auto'
           }}>
