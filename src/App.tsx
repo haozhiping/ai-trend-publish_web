@@ -15,7 +15,8 @@ import {
   Breadcrumb,
   Divider,
   Flex,
-  message
+  message,
+  Input
 } from 'antd'
 import {
   DashboardOutlined,
@@ -40,7 +41,10 @@ import {
   EditOutlined,
   KeyOutlined,
   GlobalOutlined,
-  BgColorsOutlined
+  BgColorsOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
+  ReloadOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -58,30 +62,31 @@ import { getCurrentTheme, saveTheme, getThemeConfig } from './utils/theme'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
+const { Search } = Input
 
 const menuItems = [
   { 
     key: '/', 
     icon: <DashboardOutlined />, 
-    label: '仪表盘',
-    breadcrumb: '仪表盘'
+    label: '工作台',
+    breadcrumb: '工作台'
   },
   { 
     key: '/workflows', 
     icon: <AppstoreOutlined />, 
-    label: '流程管理',
-    breadcrumb: '流程管理'
+    label: '工作流',
+    breadcrumb: '工作流管理'
   },
   { 
     key: '/content', 
     icon: <FileTextOutlined />, 
-    label: '内容管理',
+    label: '内容库',
     breadcrumb: '内容管理'
   },
   { 
     key: '/templates', 
     icon: <FileDoneOutlined />, 
-    label: '模板管理',
+    label: '模板',
     breadcrumb: '模板管理'
   },
   { 
@@ -93,13 +98,13 @@ const menuItems = [
   { 
     key: '/publish-history', 
     icon: <HistoryOutlined />, 
-    label: '发布历史',
+    label: '发布记录',
     breadcrumb: '发布历史'
   },
   { 
     key: '/config', 
     icon: <SettingOutlined />, 
-    label: '系统配置',
+    label: '系统设置',
     breadcrumb: '系统配置'
   },
   { 
@@ -114,6 +119,7 @@ function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   
   // 主题相关状态
   const [currentTheme, setCurrentTheme] = useState(() => getCurrentTheme())
@@ -156,6 +162,25 @@ function App() {
     }
   }, [])
 
+  // 全屏切换
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullscreen(false)
+    }
+  }
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
   const toggleTheme = () => {
     const newDarkMode = !darkMode
     setDarkMode(newDarkMode)
@@ -195,6 +220,10 @@ function App() {
     localStorage.setItem('userInfo', JSON.stringify(updatedUser))
   }
 
+  const handleRefresh = () => {
+    window.location.reload()
+  }
+
   // 键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -202,6 +231,11 @@ function App() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setSearchVisible(true)
+      }
+      // F11 全屏切换
+      if (e.key === 'F11') {
+        e.preventDefault()
+        toggleFullscreen()
       }
     }
 
@@ -286,249 +320,170 @@ function App() {
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout className="pro-layout" style={{ minHeight: '100vh' }}>
+        {/* 侧边栏 */}
         <Sider
           collapsible
           collapsed={collapsed}
           onCollapse={setCollapsed}
           width={256}
           collapsedWidth={64}
+          className="pro-sider"
           style={{
-            background: darkMode ? '#001529' : '#ffffff',
-            borderInlineEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
             position: 'fixed',
             insetInlineStart: 0,
             top: 0,
             bottom: 0,
             height: '100vh',
             zIndex: 200,
-            boxShadow: darkMode 
-              ? '6px 0 16px 0 rgba(0, 0, 0, 0.3), 3px 0 6px -4px rgba(0, 0, 0, 0.5), 9px 0 28px 8px rgba(0, 0, 0, 0.2)'
-              : '6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05)'
+            overflow: 'hidden'
           }}
         >
           {/* Logo区域 */}
-          <div style={{
-            height: 64,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? 0 : '0 24px',
-            borderBlockEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
-            background: darkMode ? '#001529' : '#ffffff'
-          }}>
-            <Flex align="center" gap={12}>
-              <div style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: 'linear-gradient(135deg, #1677ff, #69c0ff)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                fontSize: 16,
-                fontWeight: 'bold',
-                boxShadow: '0 2px 8px rgba(22, 119, 255, 0.2)'
-              }}>
-                AI
+          <div className="pro-sider-logo">
+            <Flex align="center" gap={12} justify={collapsed ? 'center' : 'flex-start'}>
+              <div className="logo-icon">
+                <span>AI</span>
               </div>
               {!collapsed && (
-                <Text style={{ 
-                  color: darkMode ? '#ffffff' : '#000000',
-                  fontSize: 16,
-                  fontWeight: 600,
-                  letterSpacing: '0.5px'
-                }}>
-                  趋势发布系统
-                </Text>
+                <div className="logo-text">
+                  <Text className="logo-title">TrendPublish</Text>
+                  <Text className="logo-subtitle">AI趋势发布系统</Text>
+                </div>
               )}
             </Flex>
           </div>
 
           {/* 菜单 */}
           <Menu
-            theme={darkMode ? 'dark' : 'light'}
             mode="inline"
             selectedKeys={[location.pathname]}
             items={menuItems}
             onClick={({ key }) => navigate(key)}
-            style={{
-              borderInlineEnd: 0,
-              background: 'transparent',
-              marginTop: 8,
-              paddingInline: 8
-            }}
+            className="pro-menu"
           />
         </Sider>
 
-        <Layout style={{ 
+        <Layout className="pro-main-layout" style={{ 
           marginInlineStart: collapsed ? 64 : 256, 
           transition: 'margin-inline-start 0.2s cubic-bezier(0.2, 0, 0, 1) 0s'
         }}>
           {/* 顶部导航 */}
-          <Header style={{
-            background: darkMode ? '#141414' : '#ffffff',
-            borderBlockEnd: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 24px',
-            height: 64,
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            boxShadow: darkMode 
-              ? '0 1px 4px rgba(0,0,0,.3)' 
-              : '0 1px 4px rgba(0,21,41,.08)'
-          }}>
-            <Flex align="center" gap={16}>
-              <Button
-                type="text"
-                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                onClick={() => setCollapsed(!collapsed)}
-                style={{ 
-                  fontSize: 16,
-                  width: 32,
-                  height: 32,
-                  color: darkMode ? '#ffffff' : '#000000'
-                }}
-              />
-              <Divider type="vertical" style={{ 
-                height: 24, 
-                margin: 0,
-                borderColor: darkMode ? '#303030' : '#f0f0f0'
-              }} />
-              <Breadcrumb 
-                items={breadcrumbItems}
-                style={{ 
-                  fontSize: 14,
-                  color: darkMode ? '#ffffff' : '#000000'
-                }}
-              />
-            </Flex>
-
-            <Flex align="center" gap={8}>
-              <Tooltip title="全局搜索 (Ctrl+K)">
+          <Header className="pro-header">
+            <Flex justify="space-between" align="center" style={{ height: '100%' }}>
+              {/* 左侧 */}
+              <Flex align="center" gap={16}>
                 <Button
                   type="text"
-                  icon={<SearchOutlined />}
-                  onClick={() => setSearchVisible(true)}
-                  style={{ 
-                    fontSize: 16,
-                    width: 32,
-                    height: 32,
-                    color: darkMode ? '#ffffff' : '#000000'
-                  }}
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setCollapsed(!collapsed)}
+                  className="trigger-btn"
                 />
-              </Tooltip>
+                <Divider type="vertical" className="header-divider" />
+                <Breadcrumb 
+                  items={breadcrumbItems}
+                  className="pro-breadcrumb"
+                />
+              </Flex>
 
-              <Tooltip title="通知中心">
-                <Badge count={notificationCount} size="small">
+              {/* 右侧 */}
+              <Flex align="center" gap={4}>
+                {/* 搜索框 */}
+                <div className="header-search">
+                  <Search
+                    placeholder="搜索菜单、内容..."
+                    onSearch={() => setSearchVisible(true)}
+                    onClick={() => setSearchVisible(true)}
+                    style={{ width: 240 }}
+                    allowClear
+                  />
+                </div>
+
+                <Divider type="vertical" className="header-divider" />
+
+                {/* 功能按钮 */}
+                <Tooltip title="刷新页面">
                   <Button
                     type="text"
-                    icon={<BellOutlined />}
-                    style={{ 
-                      fontSize: 16,
-                      width: 32,
-                      height: 32,
-                      color: darkMode ? '#ffffff' : '#000000'
-                    }}
+                    icon={<ReloadOutlined />}
+                    onClick={handleRefresh}
+                    className="header-action-btn"
                   />
-                </Badge>
-              </Tooltip>
+                </Tooltip>
 
-              <Tooltip title="主题设置">
-                <Button
-                  type="text"
-                  icon={<BgColorsOutlined />}
-                  onClick={() => setThemeVisible(true)}
-                  style={{ 
-                    fontSize: 16,
-                    width: 32,
-                    height: 32,
-                    color: darkMode ? '#ffffff' : '#000000'
-                  }}
-                />
-              </Tooltip>
+                <Tooltip title={isFullscreen ? '退出全屏 (F11)' : '全屏显示 (F11)'}>
+                  <Button
+                    type="text"
+                    icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                    onClick={toggleFullscreen}
+                    className="header-action-btn"
+                  />
+                </Tooltip>
 
-              <Tooltip title={darkMode ? '切换到亮色模式' : '切换到暗色模式'}>
-                <Button
-                  type="text"
-                  icon={darkMode ? <SunOutlined /> : <MoonOutlined />}
-                  onClick={toggleTheme}
-                  style={{ 
-                    fontSize: 16,
-                    width: 32,
-                    height: 32,
-                    color: darkMode ? '#ffffff' : '#000000'
-                  }}
-                />
-              </Tooltip>
-
-              <Divider type="vertical" style={{ 
-                height: 24, 
-                margin: '0 8px',
-                borderColor: darkMode ? '#303030' : '#f0f0f0'
-              }} />
-
-              <Dropdown
-                menu={{ 
-                  items: userMenuItems
-                }}
-                placement="bottomRight"
-                arrow
-                trigger={['click']}
-              >
-                <Button type="text" style={{ 
-                  cursor: 'pointer', 
-                  height: 'auto',
-                  padding: '4px 8px'
-                }}>
-                  <Flex align="center" gap={8}>
-                    <Avatar 
-                      size={32}
-                      style={{ 
-                        background: 'linear-gradient(135deg, #1677ff, #69c0ff)'
-                      }}
-                      icon={<UserOutlined />}
-                      src={userInfo?.avatar}
+                <Tooltip title="通知中心">
+                  <Badge count={notificationCount} size="small" offset={[0, 2]}>
+                    <Button
+                      type="text"
+                      icon={<BellOutlined />}
+                      className="header-action-btn"
                     />
-                    <Flex vertical style={{ alignItems: 'flex-start' }}>
-                      <Text style={{ 
-                        fontSize: 14, 
-                        fontWeight: 500, 
-                        lineHeight: 1.2,
-                        color: darkMode ? '#ffffff' : '#000000'
-                      }}>
-                        {userInfo?.name || '管理员'}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>
-                        {userInfo?.email || 'admin@example.com'}
-                      </Text>
+                  </Badge>
+                </Tooltip>
+
+                <Tooltip title="主题设置">
+                  <Button
+                    type="text"
+                    icon={<BgColorsOutlined />}
+                    onClick={() => setThemeVisible(true)}
+                    className="header-action-btn"
+                  />
+                </Tooltip>
+
+                <Tooltip title={darkMode ? '切换到亮色模式' : '切换到暗色模式'}>
+                  <Button
+                    type="text"
+                    icon={darkMode ? <SunOutlined /> : <MoonOutlined />}
+                    onClick={toggleTheme}
+                    className="header-action-btn"
+                  />
+                </Tooltip>
+
+                <Divider type="vertical" className="header-divider" />
+
+                {/* 用户信息 */}
+                <Dropdown
+                  menu={{ items: userMenuItems }}
+                  placement="bottomRight"
+                  arrow
+                  trigger={['click']}
+                >
+                  <Button type="text" className="user-info-btn">
+                    <Flex align="center" gap={8}>
+                      <Avatar 
+                        size={32}
+                        className="user-avatar"
+                        icon={<UserOutlined />}
+                        src={userInfo?.avatar}
+                      />
+                      <Flex vertical style={{ alignItems: 'flex-start' }}>
+                        <Text className="user-name">
+                          {userInfo?.name || '管理员'}
+                        </Text>
+                        <Text className="user-role">
+                          {userInfo?.role === 'admin' ? '系统管理员' : '普通用户'}
+                        </Text>
+                      </Flex>
+                      <DownOutlined className="user-dropdown-icon" />
                     </Flex>
-                    <DownOutlined style={{ 
-                      fontSize: 12, 
-                      color: darkMode ? '#ffffff' : '#000000' 
-                    }} />
-                  </Flex>
-                </Button>
-              </Dropdown>
+                  </Button>
+                </Dropdown>
+              </Flex>
             </Flex>
           </Header>
 
           {/* 主内容区域 */}
-          <Content style={{
-            margin: 0,
-            minHeight: 'calc(100vh - 64px)',
-            background: darkMode ? '#000000' : '#f5f5f5',
-            padding: 24,
-            overflow: 'auto'
-          }}>
-            <div style={{ 
-              maxWidth: '100%',
-              margin: '0 auto'
-            }}>
+          <Content className="pro-content">
+            <div className="content-wrapper">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/workflows" element={<WorkflowManagement />} />
