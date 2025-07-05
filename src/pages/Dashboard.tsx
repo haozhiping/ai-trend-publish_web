@@ -36,7 +36,8 @@ import {
   MonitorOutlined,
   SettingOutlined,
   EyeOutlined,
-  RiseOutlined
+  RiseOutlined,
+  LineChartOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
