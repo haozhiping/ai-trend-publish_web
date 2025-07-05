@@ -5,7 +5,6 @@ import {
   Card, 
   Statistic, 
   Progress, 
-  Timeline, 
   Alert, 
   Button, 
   Space,
@@ -13,7 +12,8 @@ import {
   Tag,
   Avatar,
   List,
-  Typography
+  Typography,
+  Tooltip
 } from 'antd'
 import { 
   ArrowUpOutlined, 
@@ -34,9 +34,11 @@ import {
   PieChartOutlined,
   ApiOutlined,
   MonitorOutlined,
-  SettingOutlined
+  SettingOutlined,
+  EyeOutlined,
+  TrendingUpOutlined
 } from '@ant-design/icons'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
 
 const { Title, Text } = Typography
 
@@ -73,7 +75,7 @@ const Dashboard: React.FC = () => {
       title: 'AI模型排行榜更新',
       description: 'DeepSeek-R1 登顶本周排行榜',
       status: 'info',
-      icon: <TrophyOutlined style={{ color: '#1890ff' }} />,
+      icon: <TrophyOutlined style={{ color: '#1677ff' }} />,
       user: 'AI Engine'
     },
     {
@@ -108,14 +110,14 @@ const Dashboard: React.FC = () => {
 
   const [pieData] = useState([
     { name: '微信公众号', value: 65, color: '#52c41a' },
-    { name: '其他平台', value: 25, color: '#1890ff' },
+    { name: '其他平台', value: 25, color: '#1677ff' },
     { name: '草稿箱', value: 10, color: '#faad14' }
   ])
 
   const [apiQuotas] = useState([
     { name: 'DeepSeek API', used: 75, total: 100, color: '#52c41a', amount: '¥45.60' },
     { name: 'FireCrawl API', used: 85, total: 100, color: '#faad14', amount: '150 次' },
-    { name: 'Twitter API', used: 40, total: 100, color: '#1890ff', amount: '3000 次' },
+    { name: 'Twitter API', used: 40, total: 100, color: '#1677ff', amount: '3000 次' },
     { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90' }
   ])
 
@@ -124,147 +126,151 @@ const Dashboard: React.FC = () => {
     // 这里会调用后端API
   }
 
-  const MetricCard = ({ title, value, prefix, suffix, trend, color, icon }: any) => (
+  const MetricCard = ({ title, value, prefix, suffix, trend, color, icon, description }: any) => (
     <Card 
       hoverable
-      style={{ 
-        background: `linear-gradient(135deg, ${color}15, ${color}05)`,
-        border: `1px solid ${color}30`,
-        borderRadius: 12
-      }}
+      className="metric-card"
+      bodyStyle={{ padding: 0 }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <Text type="secondary" style={{ fontSize: 14, fontWeight: 500 }}>{title}</Text>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <Text style={{ fontSize: 28, fontWeight: 700, color }}>
-              {prefix}{value}{suffix}
+      <div style={{ padding: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ flex: 1 }}>
+            <Text type="secondary" style={{ fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+              {title}
             </Text>
-            {trend && (
-              <Tag color={trend > 0 ? 'success' : 'error'} style={{ margin: 0 }}>
-                {trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                {Math.abs(trend)}%
-              </Tag>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+              <Text style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>
+                {prefix}{value}{suffix}
+              </Text>
+              {trend && (
+                <Tag 
+                  color={trend > 0 ? 'success' : 'error'} 
+                  style={{ margin: 0, fontSize: 12, fontWeight: 500 }}
+                  icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                >
+                  {Math.abs(trend)}%
+                </Tag>
+              )}
+            </div>
+            {description && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {description}
+              </Text>
             )}
           </div>
-        </div>
-        <div style={{ 
-          fontSize: 32, 
-          color: `${color}60`,
-          background: `${color}10`,
-          padding: 16,
-          borderRadius: 12
-        }}>
-          {icon}
+          <div style={{ 
+            fontSize: 24, 
+            color: `${color}40`,
+            background: `${color}10`,
+            padding: 12,
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {icon}
+          </div>
         </div>
       </div>
     </Card>
   )
 
   return (
-    <div style={{ padding: '0 4px' }}>
+    <div className="page-enter">
       {/* 系统状态横幅 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col span={24}>
-          <Alert
-            message={
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ 
-                      width: 8, 
-                      height: 8, 
-                      borderRadius: '50%', 
-                      background: '#52c41a',
-                      animation: 'pulse 2s infinite'
-                    }} />
-                    <Text strong>系统运行正常</Text>
-                  </div>
-                  <Divider type="vertical" />
-                  <Text type="secondary">运行时间: {systemStatus.uptime}</Text>
-                  <Divider type="vertical" />
-                  <Text type="secondary">版本: {systemStatus.version}</Text>
-                  <Divider type="vertical" />
-                  <Text type="secondary">最后更新: {systemStatus.lastUpdate}</Text>
-                </div>
-                <Space>
-                  <Button 
-                    size="small" 
-                    icon={<ReloadOutlined />}
-                    onClick={() => handleSystemControl('refresh')}
-                  >
-                    刷新状态
-                  </Button>
-                  <Button 
-                    size="small" 
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleSystemControl('restart')}
-                  >
-                    重启系统
-                  </Button>
-                </Space>
+      <Alert
+        message={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ 
+                  width: 8, 
+                  height: 8, 
+                  borderRadius: '50%', 
+                  background: '#52c41a',
+                  animation: 'pulse 2s infinite'
+                }} />
+                <Text strong style={{ color: '#52c41a' }}>系统运行正常</Text>
               </div>
-            }
-            type="success"
-            style={{ 
-              borderRadius: 12,
-              border: '1px solid #b7eb8f',
-              background: 'linear-gradient(135deg, #f6ffed, #d9f7be)'
-            }}
-          />
-        </Col>
-      </Row>
+              <Divider type="vertical" />
+              <Text type="secondary">运行时间: {systemStatus.uptime}</Text>
+              <Divider type="vertical" />
+              <Text type="secondary">版本: {systemStatus.version}</Text>
+              <Divider type="vertical" />
+              <Text type="secondary">最后更新: {systemStatus.lastUpdate}</Text>
+            </div>
+            <Space>
+              <Button 
+                size="small" 
+                icon={<ReloadOutlined />}
+                onClick={() => handleSystemControl('refresh')}
+              >
+                刷新状态
+              </Button>
+              <Button 
+                size="small" 
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                onClick={() => handleSystemControl('restart')}
+              >
+                重启系统
+              </Button>
+            </Space>
+          </div>
+        }
+        type="success"
+        style={{ 
+          marginBottom: 24,
+          borderRadius: 12,
+          border: '1px solid #b7eb8f'
+        }}
+      />
 
       {/* 核心指标卡片 */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title="总发布文章"
-            value={metrics.totalArticles.toLocaleString()}
-            trend={12}
-            color="#1890ff"
-            icon={<FileOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title="今日发布"
-            value={metrics.todayPublished}
-            trend={8}
-            color="#52c41a"
-            icon={<ThunderboltOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title="成功率"
-            value={metrics.successRate}
-            suffix="%"
-            trend={2.1}
-            color="#722ed1"
-            icon={<TrophyOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title="总阅读量"
-            value={(metrics.totalViews / 1000).toFixed(1)}
-            suffix="K"
-            trend={15}
-            color="#fa8c16"
-            icon={<FireOutlined />}
-          />
-        </Col>
-      </Row>
+      <div className="dashboard-metric-grid">
+        <MetricCard
+          title="总发布文章"
+          value={metrics.totalArticles.toLocaleString()}
+          trend={12}
+          color="#1677ff"
+          icon={<FileOutlined />}
+          description="累计发布文章数量"
+        />
+        <MetricCard
+          title="今日发布"
+          value={metrics.todayPublished}
+          trend={8}
+          color="#52c41a"
+          icon={<ThunderboltOutlined />}
+          description="今日新增发布"
+        />
+        <MetricCard
+          title="成功率"
+          value={metrics.successRate}
+          suffix="%"
+          trend={2.1}
+          color="#722ed1"
+          icon={<TrophyOutlined />}
+          description="发布成功率"
+        />
+        <MetricCard
+          title="总阅读量"
+          value={(metrics.totalViews / 1000).toFixed(1)}
+          suffix="K"
+          trend={15}
+          color="#fa8c16"
+          icon={<EyeOutlined />}
+          description="累计阅读量"
+        />
+      </div>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         {/* 发布趋势图表 */}
         <Col xs={24} lg={16}>
           <Card 
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <BarChartOutlined style={{ color: '#1890ff' }} />
+                <TrendingUpOutlined style={{ color: '#1677ff' }} />
                 <span>发布趋势分析</span>
               </div>
             }
@@ -274,14 +280,15 @@ const Dashboard: React.FC = () => {
                 <Button size="small" type="link">查看详情</Button>
               </Space>
             }
-            style={{ borderRadius: 12 }}
+            className="dashboard-chart-container"
+            bodyStyle={{ padding: '20px 24px' }}
           >
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1890ff" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#1890ff" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#1677ff" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#1677ff" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#52c41a" stopOpacity={0.3}/>
@@ -289,20 +296,21 @@ const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" stroke="#8c8c8c" />
-                <YAxis stroke="#8c8c8c" />
-                <Tooltip 
+                <XAxis dataKey="name" stroke="#8c8c8c" fontSize={12} />
+                <YAxis stroke="#8c8c8c" fontSize={12} />
+                <RechartsTooltip 
                   contentStyle={{ 
                     borderRadius: 8, 
                     border: '1px solid #f0f0f0',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    fontSize: 12
                   }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="articles" 
-                  stroke="#1890ff" 
-                  strokeWidth={3}
+                  stroke="#1677ff" 
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorArticles)"
                   name="发布文章"
@@ -311,7 +319,7 @@ const Dashboard: React.FC = () => {
                   type="monotone" 
                   dataKey="views" 
                   stroke="#52c41a" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorViews)"
                   name="阅读量"
@@ -330,7 +338,8 @@ const Dashboard: React.FC = () => {
                 <span>发布平台分布</span>
               </div>
             }
-            style={{ borderRadius: 12 }}
+            className="dashboard-chart-container"
+            bodyStyle={{ padding: '20px 24px' }}
           >
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -338,7 +347,7 @@ const Dashboard: React.FC = () => {
                   data={pieData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
+                  innerRadius={50}
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
@@ -347,17 +356,17 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <RechartsTooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 20 }}>
               {pieData.map((item, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 12, height: 12, borderRadius: 2, background: item.color }} />
-                    <Text>{item.name}</Text>
+                    <Text style={{ fontSize: 14 }}>{item.name}</Text>
                   </div>
-                  <Text strong>{item.value}%</Text>
+                  <Text strong style={{ fontSize: 14 }}>{item.value}%</Text>
                 </div>
               ))}
             </div>
@@ -365,7 +374,7 @@ const Dashboard: React.FC = () => {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         {/* 最近活动 */}
         <Col xs={24} lg={12}>
           <Card 
@@ -376,19 +385,21 @@ const Dashboard: React.FC = () => {
               </div>
             }
             extra={<Button size="small" type="link">查看全部</Button>}
-            style={{ borderRadius: 12 }}
+            bodyStyle={{ padding: '16px 24px' }}
           >
             <List
               dataSource={recentActivities}
               renderItem={(item) => (
-                <List.Item style={{ padding: '12px 0', border: 'none' }}>
+                <List.Item style={{ padding: '16px 0', border: 'none' }}>
                   <List.Item.Meta
                     avatar={
                       <Avatar 
                         icon={item.icon} 
                         style={{ 
                           background: 'transparent',
-                          border: 'none'
+                          border: 'none',
+                          width: 32,
+                          height: 32
                         }}
                       />
                     }
@@ -400,9 +411,11 @@ const Dashboard: React.FC = () => {
                     }
                     description={
                       <div>
-                        <Text type="secondary" style={{ fontSize: 13 }}>{item.description}</Text>
-                        <div style={{ marginTop: 4 }}>
-                          <Tag color="blue">{item.user}</Tag>
+                        <Text type="secondary" style={{ fontSize: 13, lineHeight: 1.4 }}>
+                          {item.description}
+                        </Text>
+                        <div style={{ marginTop: 8 }}>
+                          <Tag color="blue" size="small">{item.user}</Tag>
                         </div>
                       </div>
                     }
@@ -423,9 +436,9 @@ const Dashboard: React.FC = () => {
               </div>
             }
             extra={<Button size="small" type="link">管理配置</Button>}
-            style={{ borderRadius: 12 }}
+            bodyStyle={{ padding: '20px 24px' }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {apiQuotas.map((quota, index) => (
                 <div key={index}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -438,7 +451,7 @@ const Dashboard: React.FC = () => {
                       '0%': quota.color,
                       '100%': quota.color + '80',
                     }}
-                    trailColor="#f5f5f5"
+                    trailColor="var(--bg-secondary)"
                     strokeWidth={8}
                     style={{ marginBottom: 4 }}
                   />
@@ -456,38 +469,38 @@ const Dashboard: React.FC = () => {
       </Row>
 
       {/* 系统资源监控 */}
-      <Row gutter={[16, 16]}>
+      <Row gutter={[24, 24]}>
         <Col xs={24} lg={8}>
           <Card 
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <MonitorOutlined style={{ color: '#1890ff' }} />
+                <MonitorOutlined style={{ color: '#1677ff' }} />
                 <span>系统资源</span>
               </div>
             }
-            style={{ borderRadius: 12 }}
+            bodyStyle={{ padding: '20px 24px' }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text>CPU 使用率</Text>
-                  <Text strong>45%</Text>
+                  <Text style={{ fontSize: 14 }}>CPU 使用率</Text>
+                  <Text strong style={{ fontSize: 14 }}>45%</Text>
                 </div>
-                <Progress percent={45} strokeColor="#1890ff" />
+                <Progress percent={45} strokeColor="#1677ff" trailColor="var(--bg-secondary)" />
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text>内存使用率</Text>
-                  <Text strong>68%</Text>
+                  <Text style={{ fontSize: 14 }}>内存使用率</Text>
+                  <Text strong style={{ fontSize: 14 }}>68%</Text>
                 </div>
-                <Progress percent={68} strokeColor="#52c41a" />
+                <Progress percent={68} strokeColor="#52c41a" trailColor="var(--bg-secondary)" />
               </div>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text>磁盘使用率</Text>
-                  <Text strong>32%</Text>
+                  <Text style={{ fontSize: 14 }}>磁盘使用率</Text>
+                  <Text strong style={{ fontSize: 14 }}>32%</Text>
                 </div>
-                <Progress percent={32} strokeColor="#faad14" />
+                <Progress percent={32} strokeColor="#faad14" trailColor="var(--bg-secondary)" />
               </div>
             </div>
           </Card>
@@ -501,7 +514,7 @@ const Dashboard: React.FC = () => {
                 <span>工作流状态</span>
               </div>
             }
-            style={{ borderRadius: 12 }}
+            bodyStyle={{ padding: '20px 24px' }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {[
@@ -509,19 +522,22 @@ const Dashboard: React.FC = () => {
                 { name: 'AI排行榜工作流', status: 'running', nextRun: '周二 03:00' },
                 { name: 'GitHub项目工作流', status: 'stopped', nextRun: '已暂停' }
               ].map((workflow, index) => (
-                <div key={index} style={{ 
+                <div key={index} className="workflow-card" style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'space-between',
-                  padding: 12,
-                  background: '#fafafa',
+                  padding: 16,
+                  margin: 0,
+                  background: 'var(--bg-secondary)',
                   borderRadius: 8
                 }}>
                   <div>
-                    <Text strong style={{ fontSize: 14 }}>{workflow.name}</Text>
-                    <div style={{ marginTop: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>下次运行: {workflow.nextRun}</Text>
-                    </div>
+                    <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 4 }}>
+                      {workflow.name}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      下次运行: {workflow.nextRun}
+                    </Text>
                   </div>
                   <Tag color={workflow.status === 'running' ? 'success' : 'default'}>
                     {workflow.status === 'running' ? '运行中' : '已停止'}
@@ -540,14 +556,14 @@ const Dashboard: React.FC = () => {
                 <span>系统健康度</span>
               </div>
             }
-            style={{ borderRadius: 12 }}
+            bodyStyle={{ padding: '20px 24px' }}
           >
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ 
                 width: 120, 
                 height: 120, 
                 borderRadius: '50%',
-                background: 'conic-gradient(#52c41a 0deg 324deg, #f0f0f0 324deg 360deg)',
+                background: 'conic-gradient(#52c41a 0deg 324deg, var(--bg-secondary) 324deg 360deg)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -558,19 +574,23 @@ const Dashboard: React.FC = () => {
                   width: 80,
                   height: 80,
                   borderRadius: '50%',
-                  background: '#fff',
+                  background: 'var(--bg-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: 'bold',
                   color: '#52c41a'
                 }}>
                   90%
                 </div>
               </div>
-              <Title level={4} style={{ margin: 0, color: '#52c41a' }}>优秀</Title>
-              <Text type="secondary">系统运行状态良好</Text>
+              <Title level={4} style={{ margin: '0 0 8px 0', color: '#52c41a', fontSize: 18 }}>
+                优秀
+              </Title>
+              <Text type="secondary" style={{ fontSize: 14 }}>
+                系统运行状态良好
+              </Text>
             </div>
           </Card>
         </Col>
