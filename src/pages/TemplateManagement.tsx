@@ -208,15 +208,26 @@ const TemplateManagement: React.FC = () => {
                   <Card
                     hoverable
                     cover={
-                      <img
-                        alt={template.name}
-                        src={template.preview}
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          alt={template.name}
+                          src={template.preview}
+                          style={{ width: '100%', height: 'auto' }}
+                        />
                         {template.isDefault && (
-                          <Tag color="gold" icon={<StarOutlined />}>
+                          <Tag 
+                            color="gold" 
+                            icon={<StarOutlined />}
+                            style={{ 
+                              position: 'absolute', 
+                              top: 8, 
+                              right: 8 
+                            }}
+                          >
                             默认
                           </Tag>
                         )}
-                      />
+                      </div>
                     }
                     actions={[
                       <EyeOutlined key="preview" onClick={() => handlePreview(template)} />,
