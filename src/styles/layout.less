@@ -202,10 +202,14 @@
   }
   
   .header-search {
+    display: flex;
+    align-items: center;
+    
     .ant-input-affix-wrapper {
       border-radius: 20px;
       background: #f5f5f5;
       border: 1px solid transparent;
+      height: 32px;
       
       &:hover, &:focus {
         background: #fff;
@@ -217,6 +221,13 @@
         background: transparent;
         border: none;
         box-shadow: none;
+        height: 30px;
+        line-height: 30px;
+      }
+      
+      .ant-input-prefix {
+        display: flex;
+        align-items: center;
       }
     }
   }
