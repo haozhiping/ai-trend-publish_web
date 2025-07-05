@@ -10,7 +10,8 @@ import {
   Alert,
   theme,
   Flex,
-  Tabs
+  Tabs,
+  message
 } from 'antd'
 import { 
   UserOutlined, 
@@ -36,6 +37,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [loginType, setLoginType] = useState<LoginType>('account')
+  const [captchaLoading, setCaptchaLoading] = useState(false)
+  const [countdown, setCountdown] = useState(0)
 
   const handleSubmit = async (values: any) => {
     setLoading(true)
@@ -68,6 +71,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }
   }
 
+  const handleGetCaptcha = async () => {
+    setCaptchaLoading(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      message.success('获取验证码成功！验证码为：1234')
+      
+      // 开始倒计时
+      setCountdown(60)
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } catch (err) {
+      message.error('获取验证码失败')
+    } finally {
+      setCaptchaLoading(false)
+    }
+  }
+
   const iconStyles = {
     marginInlineStart: '16px',
     color: 'rgba(0, 0, 0, 0.2)',
@@ -76,10 +103,27 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     cursor: 'pointer',
   }
 
+  // 自定义输入框样式
+  const inputStyle = {
+    height: '48px',
+    fontSize: '16px',
+    backgroundColor: '#f5f5f5',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '0 16px',
+    transition: 'all 0.3s ease'
+  }
+
+  const inputFocusStyle = {
+    backgroundColor: '#ffffff',
+    boxShadow: '0 0 0 2px rgba(22, 119, 255, 0.1)',
+    border: '1px solid #1677ff'
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: token.colorBgContainer,
+      background: '#f5f5f5',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -87,7 +131,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '368px'
+        maxWidth: '368px',
+        background: '#ffffff',
+        borderRadius: '12px',
+        padding: '48px 40px',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.08)'
       }}>
         {/* Logo 和标题 */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
@@ -107,14 +155,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
           <Title level={2} style={{ 
             margin: '0 0 8px 0',
-            fontSize: '33px',
+            fontSize: '28px',
             fontWeight: 600,
-            color: token.colorText
+            color: '#000000'
           }}>
             AI 趋势发布系统
           </Title>
           <Text style={{ 
-            color: token.colorTextSecondary,
+            color: '#999999',
             fontSize: '14px'
           }}>
             Ant Design 是西湖区最具影响力的 Web 设计规范
@@ -127,7 +175,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             message={error}
             type="error"
             showIcon
-            style={{ marginBottom: '24px' }}
+            style={{ marginBottom: '24px', borderRadius: '8px' }}
           />
         )}
 
@@ -143,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             centered
             activeKey={loginType}
             onChange={(activeKey) => setLoginType(activeKey as LoginType)}
-            style={{ marginBottom: '24px' }}
+            style={{ marginBottom: '32px' }}
             items={[
               { key: 'account', label: '账户密码登录' },
               { key: 'mobile', label: '手机号登录' }
@@ -155,15 +203,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <Form.Item
                 name="username"
                 rules={[{ required: true, message: '请输入用户名!' }]}
-                style={{ marginBottom: '24px' }}
+                style={{ marginBottom: '20px' }}
               >
                 <Input
-                  prefix={<UserOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                  prefix={<UserOutlined style={{ color: '#999999', fontSize: '16px' }} />}
                   placeholder="用户名: admin or user"
-                  style={{ 
-                    height: '40px',
-                    borderRadius: '6px',
-                    fontSize: '14px'
+                  style={inputStyle}
+                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#f5f5f5'
+                    e.target.style.border = 'none'
+                    e.target.style.boxShadow = 'none'
                   }}
                 />
               </Form.Item>
@@ -174,12 +224,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 style={{ marginBottom: '24px' }}
               >
                 <Input.Password
-                  prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                  prefix={<LockOutlined style={{ color: '#999999', fontSize: '16px' }} />}
                   placeholder="密码: admin123"
-                  style={{ 
-                    height: '40px',
-                    borderRadius: '6px',
-                    fontSize: '14px'
+                  style={inputStyle}
+                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#f5f5f5'
+                    e.target.style.border = 'none'
+                    e.target.style.boxShadow = 'none'
                   }}
                 />
               </Form.Item>
@@ -194,15 +246,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   { required: true, message: '请输入手机号！' },
                   { pattern: /^1\d{10}$/, message: '手机号格式错误！' }
                 ]}
-                style={{ marginBottom: '24px' }}
+                style={{ marginBottom: '20px' }}
               >
                 <Input
-                  prefix={<MobileOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                  prefix={<MobileOutlined style={{ color: '#999999', fontSize: '16px' }} />}
                   placeholder="手机号"
-                  style={{ 
-                    height: '40px',
-                    borderRadius: '6px',
-                    fontSize: '14px'
+                  style={inputStyle}
+                  onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#f5f5f5'
+                    e.target.style.border = 'none'
+                    e.target.style.boxShadow = 'none'
                   }}
                 />
               </Form.Item>
@@ -212,25 +266,33 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 rules={[{ required: true, message: '请输入验证码！' }]}
                 style={{ marginBottom: '24px' }}
               >
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
                   <Input
-                    prefix={<LockOutlined style={{ color: 'rgba(0, 0, 0, 0.25)' }} />}
+                    prefix={<LockOutlined style={{ color: '#999999', fontSize: '16px' }} />}
                     placeholder="请输入验证码"
-                    style={{ 
-                      height: '40px', 
-                      flex: 1,
-                      borderRadius: '6px',
-                      fontSize: '14px'
+                    style={{ ...inputStyle, flex: 1 }}
+                    onFocus={(e) => Object.assign(e.target.style, inputFocusStyle)}
+                    onBlur={(e) => {
+                      e.target.style.backgroundColor = '#f5f5f5'
+                      e.target.style.border = 'none'
+                      e.target.style.boxShadow = 'none'
                     }}
                   />
                   <Button 
+                    onClick={handleGetCaptcha}
+                    loading={captchaLoading}
+                    disabled={countdown > 0}
                     style={{ 
-                      height: '40px',
-                      borderRadius: '6px',
-                      fontSize: '14px'
+                      height: '48px',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      minWidth: '100px',
+                      backgroundColor: '#f5f5f5',
+                      border: 'none',
+                      color: countdown > 0 ? '#999999' : '#1677ff'
                     }}
                   >
-                    获取验证码
+                    {countdown > 0 ? `${countdown}s` : '获取验证码'}
                   </Button>
                 </div>
               </Form.Item>
@@ -238,18 +300,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           )}
 
           <div style={{ 
-            marginBottom: '24px',
+            marginBottom: '32px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
             <Form.Item name="autoLogin" valuePropName="checked" noStyle>
-              <Checkbox style={{ fontSize: '14px' }}>自动登录</Checkbox>
+              <Checkbox style={{ fontSize: '14px', color: '#666666' }}>自动登录</Checkbox>
             </Form.Item>
             <a 
               href="#" 
               style={{ 
-                color: token.colorPrimary,
+                color: '#1677ff',
                 fontSize: '14px',
                 textDecoration: 'none'
               }}
@@ -266,10 +328,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               loading={loading}
               block
               style={{ 
-                height: '40px',
-                borderRadius: '6px',
+                height: '48px',
+                borderRadius: '8px',
                 fontSize: '16px',
-                fontWeight: 400
+                fontWeight: 500,
+                backgroundColor: '#1677ff',
+                border: 'none'
               }}
             >
               登录
@@ -280,11 +344,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* 其他登录方式 */}
         <div style={{ 
           textAlign: 'center',
-          marginBottom: '40px'
+          marginBottom: '32px'
         }}>
           <Space>
             <Text style={{ 
-              color: token.colorTextSecondary,
+              color: '#999999',
               fontSize: '14px'
             }}>
               其他登录方式
@@ -299,22 +363,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* 演示账号提示 */}
         <div style={{
           padding: '16px',
-          background: token.colorFillAlter,
-          borderRadius: '6px',
-          border: `1px solid ${token.colorBorderSecondary}`,
-          marginBottom: '32px'
+          background: '#f8f9fa',
+          borderRadius: '8px',
+          marginBottom: '24px'
         }}>
           <Text strong style={{ 
             fontSize: '14px', 
             display: 'block', 
             marginBottom: '8px',
-            color: token.colorText
+            color: '#333333'
           }}>
             演示账号
           </Text>
           <div style={{ 
             fontSize: '12px', 
-            color: token.colorTextSecondary,
+            color: '#666666',
             lineHeight: '20px'
           }}>
             <div>用户名: admin</div>
@@ -325,14 +388,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         {/* 底部版权 */}
         <div style={{ 
           textAlign: 'center',
-          color: token.colorTextTertiary,
+          color: '#cccccc',
           fontSize: '12px',
           lineHeight: '20px'
         }}>
-          <div style={{ marginBottom: '8px' }}>
-            <SafetyOutlined style={{ marginRight: '4px' }} />
-            安全登录 · 数据加密传输
-          </div>
           <div>
             Copyright © 2024 蚂蚁集团体验技术部出品
           </div>
