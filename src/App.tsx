@@ -39,7 +39,8 @@ import {
   DownOutlined,
   EditOutlined,
   KeyOutlined,
-  GlobalOutlined
+  GlobalOutlined,
+  BgColorsOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -52,6 +53,8 @@ import SystemLogs from './pages/SystemLogs'
 import Login from './components/Login'
 import UserProfile from './components/UserProfile'
 import GlobalSearch from './components/GlobalSearch'
+import ThemeSelector from './components/ThemeSelector'
+import { getCurrentTheme, saveTheme, getThemeConfig } from './utils/theme'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -111,9 +114,10 @@ function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark'
-  })
+  
+  // 主题相关状态
+  const [currentTheme, setCurrentTheme] = useState(() => getCurrentTheme())
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('dark-mode') === 'true')
   
   // 用户认证状态
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -128,6 +132,7 @@ function App() {
   // 模态框状态
   const [profileVisible, setProfileVisible] = useState(false)
   const [searchVisible, setSearchVisible] = useState(false)
+  const [themeVisible, setThemeVisible] = useState(false)
 
   // 通知数量
   const [notificationCount, setNotificationCount] = useState(3)
@@ -152,12 +157,22 @@ function App() {
   }, [])
 
   const toggleTheme = () => {
-    setDarkMode((prev) => {
-      const newTheme = !prev
-      localStorage.setItem('theme', newTheme ? 'dark' : 'light')
-      document.documentElement.setAttribute('data-theme', newTheme ? 'dark' : 'light')
-      return newTheme
-    })
+    const newDarkMode = !darkMode
+    setDarkMode(newDarkMode)
+    localStorage.setItem('dark-mode', newDarkMode.toString())
+    document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
+  }
+
+  const handleThemeChange = (themeKey: string) => {
+    setCurrentTheme(themeKey)
+    saveTheme(themeKey)
+    message.success('主题已切换')
+  }
+
+  const handleDarkModeChange = (isDark: boolean) => {
+    setDarkMode(isDark)
+    localStorage.setItem('dark-mode', isDark.toString())
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
   }
 
   const handleLogin = (user: any) => {
@@ -227,6 +242,12 @@ function App() {
       label: '安全中心'
     },
     {
+      key: 'theme',
+      icon: <BgColorsOutlined />,
+      label: '主题设置',
+      onClick: () => setThemeVisible(true)
+    },
+    {
       type: 'divider'
     },
     {
@@ -252,73 +273,7 @@ function App() {
     }
   ]
 
-  const themeConfig = useMemo(() => ({
-    token: {
-      colorPrimary: '#1677ff',
-      colorInfo: '#1677ff',
-      colorSuccess: '#00b96b',
-      colorWarning: '#faad14',
-      colorError: '#ff4d4f',
-      borderRadius: 8,
-      wireframe: false,
-      fontSize: 14,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
-      boxShadowSecondary: '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)',
-      boxShadowTertiary: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-    },
-    algorithm: darkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-    components: {
-      Layout: {
-        siderBg: darkMode ? '#001529' : '#ffffff',
-        headerBg: darkMode ? '#141414' : '#ffffff',
-        bodyBg: darkMode ? '#000000' : '#f5f5f5',
-        triggerBg: darkMode ? '#002140' : '#ffffff',
-        triggerColor: darkMode ? '#ffffff' : '#000000'
-      },
-      Menu: {
-        itemBg: 'transparent',
-        itemSelectedBg: darkMode ? '#1677ff' : '#e6f4ff',
-        itemSelectedColor: darkMode ? '#ffffff' : '#1677ff',
-        itemHoverBg: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-        itemActiveBg: darkMode ? '#1677ff' : '#e6f4ff',
-        itemColor: darkMode ? 'rgba(255, 255, 255, 0.88)' : 'rgba(0, 0, 0, 0.88)',
-        iconSize: 16,
-        fontSize: 14,
-        itemHeight: 40,
-        collapsedIconSize: 16,
-        itemBorderRadius: 6,
-        itemMarginInline: 4
-      },
-      Card: {
-        headerBg: darkMode ? '#141414' : '#fafafa',
-        colorBgContainer: darkMode ? '#141414' : '#ffffff'
-      },
-      Button: {
-        borderRadius: 6,
-        controlHeight: 32,
-        fontSize: 14
-      },
-      Input: {
-        borderRadius: 6,
-        controlHeight: 32
-      },
-      Select: {
-        borderRadius: 6,
-        controlHeight: 32
-      },
-      Table: {
-        headerBg: darkMode ? '#1f1f1f' : '#fafafa',
-        rowHoverBg: darkMode ? '#262626' : '#f5f5f5'
-      },
-      Modal: {
-        borderRadiusLG: 12
-      },
-      Dropdown: {
-        borderRadiusOuter: 8
-      }
-    }
-  }), [darkMode])
+  const themeConfig = useMemo(() => getThemeConfig(currentTheme, darkMode), [currentTheme, darkMode])
 
   // 如果未认证，显示登录页面
   if (!isAuthenticated) {
@@ -483,6 +438,20 @@ function App() {
                 </Badge>
               </Tooltip>
 
+              <Tooltip title="主题设置">
+                <Button
+                  type="text"
+                  icon={<BgColorsOutlined />}
+                  onClick={() => setThemeVisible(true)}
+                  style={{ 
+                    fontSize: 16,
+                    width: 32,
+                    height: 32,
+                    color: darkMode ? '#ffffff' : '#000000'
+                  }}
+                />
+              </Tooltip>
+
               <Tooltip title={darkMode ? '切换到亮色模式' : '切换到暗色模式'}>
                 <Button
                   type="text"
@@ -587,6 +556,16 @@ function App() {
       <GlobalSearch
         visible={searchVisible}
         onClose={() => setSearchVisible(false)}
+      />
+
+      {/* 主题设置抽屉 */}
+      <ThemeSelector
+        visible={themeVisible}
+        onClose={() => setThemeVisible(false)}
+        currentTheme={currentTheme}
+        isDark={darkMode}
+        onThemeChange={handleThemeChange}
+        onDarkModeChange={handleDarkModeChange}
       />
     </ConfigProvider>
   )
