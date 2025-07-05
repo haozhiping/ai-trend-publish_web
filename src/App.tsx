@@ -13,7 +13,8 @@ import {
   theme as antdTheme, 
   ConfigProvider,
   Breadcrumb,
-  Divider
+  Divider,
+  Flex
 } from 'antd'
 import {
   DashboardOutlined,
@@ -32,7 +33,8 @@ import {
   MoonOutlined,
   QuestionCircleOutlined,
   GithubOutlined,
-  HomeOutlined
+  HomeOutlined,
+  SearchOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -42,7 +44,6 @@ import DataSources from './pages/DataSources'
 import PublishHistory from './pages/PublishHistory'
 import ConfigManagement from './pages/ConfigManagement'
 import SystemLogs from './pages/SystemLogs'
-import './index.css'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
@@ -118,10 +119,10 @@ function App() {
   const breadcrumbItems = [
     {
       title: (
-        <Space>
+        <Flex align="center" gap={4}>
           <HomeOutlined />
           <span>首页</span>
-        </Space>
+        </Flex>
       ),
       onClick: () => navigate('/')
     }
@@ -160,41 +161,57 @@ function App() {
     }
   ]
 
+  const { token } = antdTheme.useToken()
+
   const themeConfig = useMemo(() => ({
     token: {
       colorPrimary: '#1677ff',
-      colorBgBase: darkMode ? '#141414' : '#ffffff',
-      colorTextBase: darkMode ? '#ffffff' : '#000000',
-      colorBgContainer: darkMode ? '#1f1f1f' : '#ffffff',
-      colorBgElevated: darkMode ? '#262626' : '#ffffff',
-      colorBorder: darkMode ? '#424242' : '#d9d9d9',
-      colorBorderSecondary: darkMode ? '#303030' : '#f0f0f0',
+      colorInfo: '#1677ff',
+      colorSuccess: '#00b96b',
+      colorWarning: '#faad14',
+      colorError: '#ff4d4f',
       borderRadius: 8,
+      wireframe: false,
       fontSize: 14,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-      boxShadow: darkMode 
-        ? '0 1px 2px 0 rgba(0, 0, 0, 0.3), 0 1px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px 0 rgba(0, 0, 0, 0.1)'
-        : '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
-      boxShadowSecondary: darkMode
-        ? '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)'
-        : '0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05)'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"',
     },
     algorithm: darkMode ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     components: {
       Layout: {
         siderBg: darkMode ? '#001529' : '#ffffff',
-        headerBg: darkMode ? '#1f1f1f' : '#ffffff',
-        bodyBg: darkMode ? '#141414' : '#f5f5f5'
+        headerBg: darkMode ? '#141414' : '#ffffff',
+        bodyBg: darkMode ? '#000000' : '#f5f5f5',
+        triggerBg: darkMode ? '#002140' : '#ffffff',
+        triggerColor: darkMode ? '#ffffff' : '#000000'
       },
       Menu: {
         itemBg: 'transparent',
         itemSelectedBg: darkMode ? '#1677ff' : '#e6f4ff',
         itemSelectedColor: darkMode ? '#ffffff' : '#1677ff',
         itemHoverBg: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-        itemActiveBg: darkMode ? '#1677ff' : '#e6f4ff'
+        itemActiveBg: darkMode ? '#1677ff' : '#e6f4ff',
+        itemColor: darkMode ? 'rgba(255, 255, 255, 0.88)' : 'rgba(0, 0, 0, 0.88)',
+        iconSize: 16,
+        fontSize: 14,
+        itemHeight: 40,
+        collapsedIconSize: 16
       },
       Card: {
-        headerBg: darkMode ? '#1f1f1f' : '#fafafa'
+        headerBg: darkMode ? '#141414' : '#fafafa',
+        colorBgContainer: darkMode ? '#141414' : '#ffffff'
+      },
+      Button: {
+        borderRadius: 6,
+        controlHeight: 32,
+        fontSize: 14
+      },
+      Input: {
+        borderRadius: 6,
+        controlHeight: 32
+      },
+      Select: {
+        borderRadius: 6,
+        controlHeight: 32
       }
     }
   }), [darkMode])
@@ -207,15 +224,19 @@ function App() {
           collapsed={collapsed}
           onCollapse={setCollapsed}
           width={256}
+          collapsedWidth={64}
           style={{
-            background: darkMode ? '#001529' : '#ffffff',
-            borderRight: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
-            boxShadow: '2px 0 8px 0 rgba(29, 35, 41, 0.05)',
+            background: token.colorBgContainer,
+            borderInlineEnd: `1px solid ${token.colorBorderSecondary}`,
             position: 'fixed',
-            height: '100vh',
-            left: 0,
+            insetInlineStart: 0,
             top: 0,
-            zIndex: 100
+            bottom: 0,
+            height: '100vh',
+            zIndex: 200,
+            boxShadow: darkMode 
+              ? '6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05)'
+              : '6px 0 16px 0 rgba(0, 0, 0, 0.08), 3px 0 6px -4px rgba(0, 0, 0, 0.12), 9px 0 28px 8px rgba(0, 0, 0, 0.05)'
           }}
         >
           {/* Logo区域 */}
@@ -225,18 +246,10 @@ function App() {
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-start',
             padding: collapsed ? 0 : '0 24px',
-            borderBottom: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
-            background: darkMode ? '#001529' : '#ffffff'
+            borderBlockEnd: `1px solid ${token.colorBorderSecondary}`,
+            background: token.colorBgContainer
           }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              color: darkMode ? '#ffffff' : '#1677ff',
-              fontSize: collapsed ? 20 : 18,
-              fontWeight: 600,
-              letterSpacing: '0.5px'
-            }}>
+            <Flex align="center" gap={12}>
               <div style={{
                 width: 32,
                 height: 32,
@@ -247,16 +260,22 @@ function App() {
                 justifyContent: 'center',
                 color: '#ffffff',
                 fontSize: 16,
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                boxShadow: '0 2px 8px rgba(22, 119, 255, 0.2)'
               }}>
                 AI
               </div>
               {!collapsed && (
-                <span style={{ color: darkMode ? '#ffffff' : '#262626' }}>
+                <Text style={{ 
+                  color: token.colorText,
+                  fontSize: 16,
+                  fontWeight: 600,
+                  letterSpacing: '0.5px'
+                }}>
                   趋势发布系统
-                </span>
+                </Text>
               )}
-            </div>
+            </Flex>
           </div>
 
           {/* 菜单 */}
@@ -267,19 +286,21 @@ function App() {
             items={menuItems}
             onClick={({ key }) => navigate(key)}
             style={{
-              borderRight: 0,
+              borderInlineEnd: 0,
               background: 'transparent',
-              fontSize: 14,
-              fontWeight: 500
+              marginTop: 8
             }}
           />
         </Sider>
 
-        <Layout style={{ marginLeft: collapsed ? 80 : 256, transition: 'margin-left 0.2s' }}>
+        <Layout style={{ 
+          marginInlineStart: collapsed ? 64 : 256, 
+          transition: 'margin-inline-start 0.2s cubic-bezier(0.2, 0, 0, 1) 0s'
+        }}>
           {/* 顶部导航 */}
           <Header style={{
-            background: darkMode ? '#1f1f1f' : '#ffffff',
-            borderBottom: `1px solid ${darkMode ? '#303030' : '#f0f0f0'}`,
+            background: token.colorBgContainer,
+            borderBlockEnd: `1px solid ${token.colorBorderSecondary}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -287,34 +308,40 @@ function App() {
             height: 64,
             position: 'sticky',
             top: 0,
-            zIndex: 99,
+            zIndex: 100,
             boxShadow: '0 1px 4px rgba(0,21,41,.08)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Flex align="center" gap={16}>
               <Button
                 type="text"
                 icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                 onClick={() => setCollapsed(!collapsed)}
                 style={{ 
                   fontSize: 16,
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
+                  width: 32,
+                  height: 32
                 }}
               />
-              <Divider type="vertical" style={{ height: 24 }} />
+              <Divider type="vertical" style={{ height: 24, margin: 0 }} />
               <Breadcrumb 
                 items={breadcrumbItems}
-                style={{ 
-                  fontSize: 14,
-                  color: darkMode ? '#ffffff' : '#262626'
-                }}
+                style={{ fontSize: 14 }}
               />
-            </div>
+            </Flex>
 
-            <Space size="middle">
+            <Flex align="center" gap={8}>
+              <Tooltip title="搜索">
+                <Button
+                  type="text"
+                  icon={<SearchOutlined />}
+                  style={{ 
+                    fontSize: 16,
+                    width: 32,
+                    height: 32
+                  }}
+                />
+              </Tooltip>
+
               <Tooltip title="通知">
                 <Badge count={3} size="small">
                   <Button
@@ -322,11 +349,8 @@ function App() {
                     icon={<BellOutlined />}
                     style={{ 
                       fontSize: 16,
-                      width: 40,
-                      height: 40,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+                      width: 32,
+                      height: 32
                     }}
                   />
                 </Badge>
@@ -339,54 +363,65 @@ function App() {
                   onClick={toggleTheme}
                   style={{ 
                     fontSize: 16,
-                    width: 40,
-                    height: 40,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    width: 32,
+                    height: 32
                   }}
                 />
               </Tooltip>
 
+              <Divider type="vertical" style={{ height: 24, margin: '0 8px' }} />
+
               <Dropdown
                 menu={{ items: userMenuItems }}
                 placement="bottomRight"
-                arrow
+                arrow={{ pointAtCenter: true }}
               >
-                <Space style={{ cursor: 'pointer', padding: '8px 12px', borderRadius: 8 }}>
+                <Flex align="center" gap={8} style={{ 
+                  cursor: 'pointer', 
+                  padding: '4px 8px', 
+                  borderRadius: 8,
+                  transition: 'background-color 0.2s',
+                  ':hover': {
+                    backgroundColor: token.colorBgTextHover
+                  }
+                }}>
                   <Avatar 
                     size={32}
                     style={{ 
                       background: 'linear-gradient(135deg, #1677ff, #69c0ff)',
-                      border: '2px solid rgba(22, 119, 255, 0.2)'
+                      border: `2px solid ${token.colorBorder}`
                     }}
                     icon={<UserOutlined />}
                   />
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <Text style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.2 }}>
+                  <Flex vertical style={{ alignItems: 'flex-start' }}>
+                    <Text style={{ 
+                      fontSize: 14, 
+                      fontWeight: 500, 
+                      lineHeight: 1.2,
+                      color: token.colorText
+                    }}>
                       管理员
                     </Text>
                     <Text type="secondary" style={{ fontSize: 12, lineHeight: 1.2 }}>
                       admin@example.com
                     </Text>
-                  </div>
-                </Space>
+                  </Flex>
+                </Flex>
               </Dropdown>
-            </Space>
+            </Flex>
           </Header>
 
           {/* 主内容区域 */}
           <Content style={{
             margin: 0,
             minHeight: 'calc(100vh - 64px)',
-            background: darkMode ? '#141414' : '#f5f5f5',
+            background: token.colorBgLayout,
             padding: 24,
             overflow: 'auto'
           }}>
             <div style={{ 
               maxWidth: '100%',
-              margin: '0 auto',
-              background: 'transparent'
+              margin: '0 auto'
             }}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />

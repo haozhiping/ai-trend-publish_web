@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { 
   Row, 
   Col, 
@@ -8,18 +8,18 @@ import {
   Alert, 
   Button, 
   Space,
-  Divider,
   Tag,
   Avatar,
   List,
   Typography,
-  Tooltip
+  Tooltip,
+  Flex,
+  theme
 } from 'antd'
 import { 
   ArrowUpOutlined, 
   ArrowDownOutlined, 
   PlayCircleOutlined,
-  PauseCircleOutlined,
   ReloadOutlined,
   TrophyOutlined,
   RocketOutlined,
@@ -38,19 +38,34 @@ import {
   EyeOutlined,
   RiseOutlined
 } from '@ant-design/icons'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts'
 
 const { Title, Text } = Typography
 
 const Dashboard: React.FC = () => {
-  const [systemStatus, setSystemStatus] = useState({
+  const { token } = theme.useToken()
+  
+  const [systemStatus] = useState({
     status: 'running',
     uptime: '2天 14小时 32分钟',
     lastUpdate: '2024-01-15 14:30:00',
     version: 'v1.2.3'
   })
 
-  const [metrics, setMetrics] = useState({
+  const [metrics] = useState({
     totalArticles: 1247,
     todayPublished: 12,
     successRate: 98.5,
@@ -66,7 +81,7 @@ const Dashboard: React.FC = () => {
       title: '微信文章工作流执行完成',
       description: '成功发布 8 篇文章到微信公众号',
       status: 'success',
-      icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
+      icon: <CheckCircleOutlined />,
       user: 'System'
     },
     {
@@ -75,7 +90,7 @@ const Dashboard: React.FC = () => {
       title: 'AI模型排行榜更新',
       description: 'DeepSeek-R1 登顶本周排行榜',
       status: 'info',
-      icon: <TrophyOutlined style={{ color: '#1677ff' }} />,
+      icon: <TrophyOutlined />,
       user: 'AI Engine'
     },
     {
@@ -84,7 +99,7 @@ const Dashboard: React.FC = () => {
       title: 'GitHub热门项目抓取',
       description: '发现 15 个新的AI相关热门项目',
       status: 'success',
-      icon: <RocketOutlined style={{ color: '#52c41a' }} />,
+      icon: <RocketOutlined />,
       user: 'Crawler'
     },
     {
@@ -93,7 +108,7 @@ const Dashboard: React.FC = () => {
       title: 'FireCrawl API额度警告',
       description: '当前额度剩余不足20%，建议及时充值',
       status: 'warning',
-      icon: <ExclamationCircleOutlined style={{ color: '#faad14' }} />,
+      icon: <ExclamationCircleOutlined />,
       user: 'Monitor'
     }
   ])
@@ -109,96 +124,100 @@ const Dashboard: React.FC = () => {
   ])
 
   const [pieData] = useState([
-    { name: '微信公众号', value: 65, color: '#52c41a' },
-    { name: '其他平台', value: 25, color: '#1677ff' },
-    { name: '草稿箱', value: 10, color: '#faad14' }
+    { name: '微信公众号', value: 65, color: token.colorSuccess },
+    { name: '其他平台', value: 25, color: token.colorPrimary },
+    { name: '草稿箱', value: 10, color: token.colorWarning }
   ])
 
   const [apiQuotas] = useState([
-    { name: 'DeepSeek API', used: 75, total: 100, color: '#52c41a', amount: '¥45.60' },
-    { name: 'FireCrawl API', used: 85, total: 100, color: '#faad14', amount: '150 次' },
-    { name: 'Twitter API', used: 40, total: 100, color: '#1677ff', amount: '3000 次' },
+    { name: 'DeepSeek API', used: 75, total: 100, color: token.colorSuccess, amount: '¥45.60' },
+    { name: 'FireCrawl API', used: 85, total: 100, color: token.colorWarning, amount: '150 次' },
+    { name: 'Twitter API', used: 40, total: 100, color: token.colorPrimary, amount: '3000 次' },
     { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90' }
   ])
 
   const handleSystemControl = (action: string) => {
     console.log(`执行系统操作: ${action}`)
-    // 这里会调用后端API
   }
 
   const MetricCard = ({ title, value, prefix, suffix, trend, color, icon, description }: any) => (
     <Card 
       hoverable
-      className="metric-card"
-      bodyStyle={{ padding: 0 }}
+      style={{
+        borderRadius: 12,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        boxShadow: token.boxShadowTertiary
+      }}
+      bodyStyle={{ padding: 24 }}
     >
-      <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <Text type="secondary" style={{ fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
-              {title}
+      <Flex justify="space-between" align="flex-start">
+        <Flex vertical gap={8} style={{ flex: 1 }}>
+          <Text type="secondary" style={{ fontSize: 14, fontWeight: 500 }}>
+            {title}
+          </Text>
+          <Flex align="baseline" gap={8}>
+            <Text style={{ 
+              fontSize: 28, 
+              fontWeight: 700, 
+              color,
+              lineHeight: 1,
+              fontFamily: 'tabular-nums'
+            }}>
+              {prefix}{value}{suffix}
             </Text>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-              <Text style={{ fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>
-                {prefix}{value}{suffix}
-              </Text>
-              {trend && (
-                <Tag 
-                  color={trend > 0 ? 'success' : 'error'} 
-                  style={{ margin: 0, fontSize: 12, fontWeight: 500 }}
-                  icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                >
-                  {Math.abs(trend)}%
-                </Tag>
-              )}
-            </div>
-            {description && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {description}
-              </Text>
+            {trend && (
+              <Tag 
+                color={trend > 0 ? 'success' : 'error'} 
+                style={{ margin: 0, fontSize: 12, fontWeight: 500 }}
+                icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+              >
+                {Math.abs(trend)}%
+              </Tag>
             )}
-          </div>
-          <div style={{ 
-            fontSize: 24, 
-            color: `${color}40`,
-            background: `${color}10`,
-            padding: 12,
-            borderRadius: 8,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            {icon}
-          </div>
+          </Flex>
+          {description && (
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {description}
+            </Text>
+          )}
+        </Flex>
+        <div style={{ 
+          fontSize: 24, 
+          color: color,
+          background: `${color}15`,
+          padding: 12,
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {icon}
         </div>
-      </div>
+      </Flex>
     </Card>
   )
 
   return (
-    <div className="page-enter">
+    <div style={{ animation: 'fadeInUp 0.6s ease-out' }}>
       {/* 系统状态横幅 */}
       <Alert
         message={
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Flex justify="space-between" align="center">
+            <Flex align="center" gap={16}>
+              <Flex align="center" gap={8}>
                 <div style={{ 
                   width: 8, 
                   height: 8, 
                   borderRadius: '50%', 
-                  background: '#52c41a',
+                  background: token.colorSuccess,
                   animation: 'pulse 2s infinite'
                 }} />
-                <Text strong style={{ color: '#52c41a' }}>系统运行正常</Text>
-              </div>
-              <Divider type="vertical" />
+                <Text strong style={{ color: token.colorSuccess }}>系统运行正常</Text>
+              </Flex>
               <Text type="secondary">运行时间: {systemStatus.uptime}</Text>
-              <Divider type="vertical" />
               <Text type="secondary">版本: {systemStatus.version}</Text>
-              <Divider type="vertical" />
               <Text type="secondary">最后更新: {systemStatus.lastUpdate}</Text>
-            </div>
+            </Flex>
             <Space>
               <Button 
                 size="small" 
@@ -216,63 +235,70 @@ const Dashboard: React.FC = () => {
                 重启系统
               </Button>
             </Space>
-          </div>
+          </Flex>
         }
         type="success"
         style={{ 
           marginBottom: 24,
-          borderRadius: 12,
-          border: '1px solid #b7eb8f'
+          borderRadius: 8
         }}
       />
 
       {/* 核心指标卡片 */}
-      <div className="dashboard-metric-grid">
-        <MetricCard
-          title="总发布文章"
-          value={metrics.totalArticles.toLocaleString()}
-          trend={12}
-          color="#1677ff"
-          icon={<FileOutlined />}
-          description="累计发布文章数量"
-        />
-        <MetricCard
-          title="今日发布"
-          value={metrics.todayPublished}
-          trend={8}
-          color="#52c41a"
-          icon={<ThunderboltOutlined />}
-          description="今日新增发布"
-        />
-        <MetricCard
-          title="成功率"
-          value={metrics.successRate}
-          suffix="%"
-          trend={2.1}
-          color="#722ed1"
-          icon={<TrophyOutlined />}
-          description="发布成功率"
-        />
-        <MetricCard
-          title="总阅读量"
-          value={(metrics.totalViews / 1000).toFixed(1)}
-          suffix="K"
-          trend={15}
-          color="#fa8c16"
-          icon={<EyeOutlined />}
-          description="累计阅读量"
-        />
-      </div>
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <MetricCard
+            title="总发布文章"
+            value={metrics.totalArticles.toLocaleString()}
+            trend={12}
+            color={token.colorPrimary}
+            icon={<FileOutlined />}
+            description="累计发布文章数量"
+          />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <MetricCard
+            title="今日发布"
+            value={metrics.todayPublished}
+            trend={8}
+            color={token.colorSuccess}
+            icon={<ThunderboltOutlined />}
+            description="今日新增发布"
+          />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <MetricCard
+            title="成功率"
+            value={metrics.successRate}
+            suffix="%"
+            trend={2.1}
+            color="#722ed1"
+            icon={<TrophyOutlined />}
+            description="发布成功率"
+          />
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <MetricCard
+            title="总阅读量"
+            value={(metrics.totalViews / 1000).toFixed(1)}
+            suffix="K"
+            trend={15}
+            color={token.colorWarning}
+            icon={<EyeOutlined />}
+            description="累计阅读量"
+          />
+        </Col>
+      </Row>
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         {/* 发布趋势图表 */}
         <Col xs={24} lg={16}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RiseOutlined style={{ color: '#1677ff' }} />
+              <Flex align="center" gap={8}>
+                <RiseOutlined style={{ color: token.colorPrimary }} />
                 <span>发布趋势分析</span>
-              </div>
+              </Flex>
             }
             extra={
               <Space>
@@ -280,36 +306,51 @@ const Dashboard: React.FC = () => {
                 <Button size="small" type="link">查看详情</Button>
               </Space>
             }
-            className="dashboard-chart-container"
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
             <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorArticles" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1677ff" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#1677ff" stopOpacity={0}/>
+                    <stop offset="5%" stopColor={token.colorPrimary} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={token.colorPrimary} stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#52c41a" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#52c41a" stopOpacity={0}/>
+                    <stop offset="5%" stopColor={token.colorSuccess} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={token.colorSuccess} stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" stroke="#8c8c8c" fontSize={12} />
-                <YAxis stroke="#8c8c8c" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke={token.colorBorderSecondary} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke={token.colorTextTertiary} 
+                  fontSize={12}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis 
+                  stroke={token.colorTextTertiary} 
+                  fontSize={12}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <RechartsTooltip 
                   contentStyle={{ 
                     borderRadius: 8, 
-                    border: '1px solid #f0f0f0',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    fontSize: 12
+                    border: `1px solid ${token.colorBorderSecondary}`,
+                    boxShadow: token.boxShadow,
+                    fontSize: 12,
+                    backgroundColor: token.colorBgElevated
                   }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="articles" 
-                  stroke="#1677ff" 
+                  stroke={token.colorPrimary} 
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorArticles)"
@@ -318,7 +359,7 @@ const Dashboard: React.FC = () => {
                 <Area 
                   type="monotone" 
                   dataKey="views" 
-                  stroke="#52c41a" 
+                  stroke={token.colorSuccess} 
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorViews)"
@@ -333,13 +374,16 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <PieChartOutlined style={{ color: '#52c41a' }} />
+              <Flex align="center" gap={8}>
+                <PieChartOutlined style={{ color: token.colorSuccess }} />
                 <span>发布平台分布</span>
-              </div>
+              </Flex>
             }
-            className="dashboard-chart-container"
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
@@ -356,18 +400,29 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <RechartsTooltip />
+                <RechartsTooltip 
+                  contentStyle={{
+                    backgroundColor: token.colorBgElevated,
+                    border: `1px solid ${token.colorBorderSecondary}`,
+                    borderRadius: 8
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ marginTop: 20 }}>
               {pieData.map((item, index) => (
-                <div key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: 2, background: item.color }} />
+                <Flex key={index} justify="space-between" align="center" style={{ marginBottom: 12 }}>
+                  <Flex align="center" gap={8}>
+                    <div style={{ 
+                      width: 12, 
+                      height: 12, 
+                      borderRadius: 2, 
+                      background: item.color 
+                    }} />
                     <Text style={{ fontSize: 14 }}>{item.name}</Text>
-                  </div>
+                  </Flex>
                   <Text strong style={{ fontSize: 14 }}>{item.value}%</Text>
-                </div>
+                </Flex>
               ))}
             </div>
           </Card>
@@ -379,13 +434,17 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ClockCircleOutlined style={{ color: '#faad14' }} />
+              <Flex align="center" gap={8}>
+                <ClockCircleOutlined style={{ color: token.colorWarning }} />
                 <span>最近活动</span>
-              </div>
+              </Flex>
             }
             extra={<Button size="small" type="link">查看全部</Button>}
-            bodyStyle={{ padding: '16px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
             <List
               dataSource={recentActivities}
@@ -399,15 +458,18 @@ const Dashboard: React.FC = () => {
                           background: 'transparent',
                           border: 'none',
                           width: 32,
-                          height: 32
+                          height: 32,
+                          color: item.status === 'success' ? token.colorSuccess :
+                                item.status === 'warning' ? token.colorWarning :
+                                item.status === 'error' ? token.colorError : token.colorPrimary
                         }}
                       />
                     }
                     title={
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <Flex justify="space-between" align="center">
                         <Text strong style={{ fontSize: 14 }}>{item.title}</Text>
                         <Text type="secondary" style={{ fontSize: 12 }}>{item.time}</Text>
-                      </div>
+                      </Flex>
                     }
                     description={
                       <div>
@@ -430,40 +492,41 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Flex align="center" gap={8}>
                 <ApiOutlined style={{ color: '#722ed1' }} />
                 <span>API 额度监控</span>
-              </div>
+              </Flex>
             }
             extra={<Button size="small" type="link">管理配置</Button>}
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <Flex vertical gap={20}>
               {apiQuotas.map((quota, index) => (
                 <div key={index}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
                     <Text strong style={{ fontSize: 14 }}>{quota.name}</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>剩余: {quota.amount}</Text>
-                  </div>
+                  </Flex>
                   <Progress 
                     percent={quota.used} 
-                    strokeColor={{
-                      '0%': quota.color,
-                      '100%': quota.color + '80',
-                    }}
-                    trailColor="var(--bg-secondary)"
+                    strokeColor={quota.color}
+                    trailColor={token.colorFillSecondary}
                     strokeWidth={8}
                     style={{ marginBottom: 4 }}
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Flex justify="space-between">
                     <Text type="secondary" style={{ fontSize: 12 }}>已使用 {quota.used}%</Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {quota.used >= 80 ? '⚠️ 额度不足' : '✅ 正常'}
                     </Text>
-                  </div>
+                  </Flex>
                 </div>
               ))}
-            </div>
+            </Flex>
           </Card>
         </Col>
       </Row>
@@ -473,63 +536,83 @@ const Dashboard: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <MonitorOutlined style={{ color: '#1677ff' }} />
+              <Flex align="center" gap={8}>
+                <MonitorOutlined style={{ color: token.colorPrimary }} />
                 <span>系统资源</span>
-              </div>
+              </Flex>
             }
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <Flex vertical gap={24}>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>CPU 使用率</Text>
                   <Text strong style={{ fontSize: 14 }}>45%</Text>
-                </div>
-                <Progress percent={45} strokeColor="#1677ff" trailColor="var(--bg-secondary)" />
+                </Flex>
+                <Progress 
+                  percent={45} 
+                  strokeColor={token.colorPrimary} 
+                  trailColor={token.colorFillSecondary} 
+                />
               </div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>内存使用率</Text>
                   <Text strong style={{ fontSize: 14 }}>68%</Text>
-                </div>
-                <Progress percent={68} strokeColor="#52c41a" trailColor="var(--bg-secondary)" />
+                </Flex>
+                <Progress 
+                  percent={68} 
+                  strokeColor={token.colorSuccess} 
+                  trailColor={token.colorFillSecondary} 
+                />
               </div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>磁盘使用率</Text>
                   <Text strong style={{ fontSize: 14 }}>32%</Text>
-                </div>
-                <Progress percent={32} strokeColor="#faad14" trailColor="var(--bg-secondary)" />
+                </Flex>
+                <Progress 
+                  percent={32} 
+                  strokeColor={token.colorWarning} 
+                  trailColor={token.colorFillSecondary} 
+                />
               </div>
-            </div>
+            </Flex>
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <SettingOutlined style={{ color: '#52c41a' }} />
+              <Flex align="center" gap={8}>
+                <SettingOutlined style={{ color: token.colorSuccess }} />
                 <span>工作流状态</span>
-              </div>
+              </Flex>
             }
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Flex vertical gap={16}>
               {[
                 { name: '微信文章工作流', status: 'running', nextRun: '明天 03:00' },
                 { name: 'AI排行榜工作流', status: 'running', nextRun: '周二 03:00' },
                 { name: 'GitHub项目工作流', status: 'stopped', nextRun: '已暂停' }
               ].map((workflow, index) => (
-                <div key={index} className="workflow-card" style={{ 
+                <div key={index} style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'space-between',
                   padding: 16,
-                  margin: 0,
-                  background: 'var(--bg-secondary)',
-                  borderRadius: 8
+                  background: token.colorFillAlter,
+                  borderRadius: 8,
+                  border: `1px solid ${token.colorBorderSecondary}`
                 }}>
                   <div>
                     <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 4 }}>
@@ -544,26 +627,30 @@ const Dashboard: React.FC = () => {
                   </Tag>
                 </div>
               ))}
-            </div>
+            </Flex>
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
           <Card 
             title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <HeartOutlined style={{ color: '#ff4d4f' }} />
+              <Flex align="center" gap={8}>
+                <HeartOutlined style={{ color: token.colorError }} />
                 <span>系统健康度</span>
-              </div>
+              </Flex>
             }
-            bodyStyle={{ padding: '20px 24px' }}
+            style={{
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
           >
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ 
                 width: 120, 
                 height: 120, 
                 borderRadius: '50%',
-                background: 'conic-gradient(#52c41a 0deg 324deg, var(--bg-secondary) 324deg 360deg)',
+                background: `conic-gradient(${token.colorSuccess} 0deg 324deg, ${token.colorFillSecondary} 324deg 360deg)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -574,18 +661,22 @@ const Dashboard: React.FC = () => {
                   width: 80,
                   height: 80,
                   borderRadius: '50%',
-                  background: 'var(--bg-primary)',
+                  background: token.colorBgContainer,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 20,
                   fontWeight: 'bold',
-                  color: '#52c41a'
+                  color: token.colorSuccess
                 }}>
                   90%
                 </div>
               </div>
-              <Title level={4} style={{ margin: '0 0 8px 0', color: '#52c41a', fontSize: 18 }}>
+              <Title level={4} style={{ 
+                margin: '0 0 8px 0', 
+                color: token.colorSuccess, 
+                fontSize: 18 
+              }}>
                 优秀
               </Title>
               <Text type="secondary" style={{ fontSize: 14 }}>
