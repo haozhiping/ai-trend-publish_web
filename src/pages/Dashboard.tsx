@@ -36,7 +36,7 @@ import {
   MonitorOutlined,
   SettingOutlined,
   EyeOutlined,
-  TrendingUpOutlined
+  RiseOutlined
 } from '@ant-design/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts'
 
@@ -270,7 +270,7 @@ const Dashboard: React.FC = () => {
           <Card 
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUpOutlined style={{ color: '#1677ff' }} />
+                <RiseOutlined style={{ color: '#1677ff' }} />
                 <span>发布趋势分析</span>
               </div>
             }
