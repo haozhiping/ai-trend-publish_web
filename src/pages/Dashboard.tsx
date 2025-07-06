@@ -171,16 +171,15 @@ const Dashboard: React.FC = () => {
         flex: 1, 
         display: 'flex', 
         flexDirection: 'column',
-        justifyContent: 'space-between',
         overflow: 'hidden'
       }}
     >
-      <Flex justify="space-between" align="flex-start">
+      <Flex justify="space-between" align="flex-start" style={{ height: '100%' }}>
         <Flex vertical gap={8} style={{ flex: 1, minWidth: 0 }}>
           <Text type="secondary" style={{ fontSize: 14, fontWeight: 500 }}>
             {title}
           </Text>
-          <Flex align="baseline" gap={8}>
+          <div>
             <Text style={{ 
               fontSize: title === '成功率' || title === '总阅读量' ? 24 : 28, 
               fontWeight: 700, 
@@ -193,31 +192,44 @@ const Dashboard: React.FC = () => {
             }}>
               {prefix}{value}{suffix}
             </Text>
+          </div>
+          
+          {/* 底部区域：描述文字和趋势标签 */}
+          <div style={{ 
+            marginTop: 'auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 8
+          }}>
+            {description && (
+              <Text type="secondary" style={{ 
+                fontSize: 12,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1
+              }}>
+                {description}
+              </Text>
+            )}
             {trend && (
               <Tag 
                 color={trend > 0 ? 'success' : 'error'} 
                 style={{ 
                   margin: 0, 
-                  fontSize: 12, 
+                  fontSize: 11, 
                   fontWeight: 500,
-                  flexShrink: 0
+                  flexShrink: 0,
+                  padding: '2px 6px',
+                  lineHeight: 1.2
                 }}
                 icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
               >
                 {Math.abs(trend)}%
               </Tag>
             )}
-          </Flex>
-          {description && (
-            <Text type="secondary" style={{ 
-              fontSize: 12,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
-              {description}
-            </Text>
-          )}
+          </div>
         </Flex>
         <div style={{ 
           fontSize: 24, 
