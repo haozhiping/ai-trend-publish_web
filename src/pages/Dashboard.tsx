@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Row, 
   Col, 
@@ -69,6 +70,7 @@ const { Option } = Select
 
 const Dashboard: React.FC = () => {
   const { token } = theme.useToken()
+  const navigate = useNavigate()
   const [timeRange, setTimeRange] = useState<string>('7d')
   const [chartType, setChartType] = useState<string>('area')
   
