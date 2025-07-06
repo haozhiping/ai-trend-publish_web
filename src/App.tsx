@@ -209,18 +209,18 @@ function App() {
     setNextTheme(newDarkMode)
     setIsAnimating(true)
     
-    // 在动画中间切换主题
+    // 在动画结束时切换主题
     setTimeout(() => {
       setDarkMode(newDarkMode)
       localStorage.setItem('dark-mode', newDarkMode.toString())
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
-    }, 350) // 在动画中间切换
-    
-    // 动画结束后清理状态
-    setTimeout(() => {
-      setIsAnimating(false)
-      setNextTheme(null)
-    }, 800)
+      
+      // 动画结束后清理状态
+      setTimeout(() => {
+        setIsAnimating(false)
+        setNextTheme(null)
+      }, 100) // 给一点时间让主题切换生效
+    }, 800) // 在动画结束时切换
   }
 
   const handleThemeChange = (themeKey: string) => {
