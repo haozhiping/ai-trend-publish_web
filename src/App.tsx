@@ -44,7 +44,6 @@ import {
   FullscreenOutlined,
   FullscreenExitOutlined,
   ReloadOutlined
-} from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
 import ContentManagement from './pages/ContentManagement'

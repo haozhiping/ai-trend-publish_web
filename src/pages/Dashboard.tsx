@@ -43,7 +43,7 @@ import {
   CalendarOutlined,
   FilterOutlined,
   MoreOutlined,
-  TrendingUpOutlined
+  ArrowUpOutlined as TrendingUpOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
