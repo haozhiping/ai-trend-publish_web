@@ -1,8 +1,7 @@
-# TrendPublish AI趋势发布系统 - 前端项目
-
 ## 📋 项目概述
 
-TrendPublish 是一个基于 AI 的智能内容发布管理系统，专注于自动化抓取、分析和发布 AI 相关的热门内容。系统采用现代化的前端技术栈，提供直观易用的管理界面。
+本项目基于 ai-trend-publish 二次开发
+原版项目：https://github.com/OpenAISpace/ai-trend-publish
 
 ### 🎯 核心功能
 
@@ -1151,13 +1150,3 @@ chore: 构建过程或辅助工具的变动
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 📞 联系我们
-
-- 项目地址: [GitHub Repository](https://github.com/your-org/trendpublish-frontend)
-- 问题反馈: [Issues](https://github.com/your-org/trendpublish-frontend/issues)
-- 邮箱: support@trendpublish.com
-
----
-
-**TrendPublish Team** ❤️ 用心打造智能内容发布系统
