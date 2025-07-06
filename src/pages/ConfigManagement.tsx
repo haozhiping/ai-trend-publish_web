@@ -13,7 +13,6 @@ import {
   Alert,
   Divider
 } from 'antd'
-import { SaveOutlined, ReloadOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
 import { SaveOutlined, ReloadOutlined, EyeInvisibleOutlined, EyeOutlined, GithubOutlined } from '@ant-design/icons'
 
 const { Option } = Select
