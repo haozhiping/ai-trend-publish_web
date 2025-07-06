@@ -101,53 +101,25 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* 主题切换动画 - 重新设计 */
-@keyframes themeRippleExpand {
+/* 主题切换动画 - 简化为只有扩展效果 */
+@keyframes themeExpand {
   0% {
     width: 0;
     height: 0;
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 0.6;
+    opacity: 0.9;
   }
   100% {
-    width: 200vmax;
-    height: 200vmax;
-    opacity: 0.4;
-  }
-}
-
-@keyframes themeRippleContract {
-  0% {
-    width: 200vmax;
-    height: 200vmax;
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    width: 0;
-    height: 0;
+    width: 300vmax;
+    height: 300vmax;
     opacity: 0;
   }
 }
 
-/* 主题切换遮罩层 */
-.theme-toggle-overlay {
-  /* 移除模糊效果，保持其他动画效果 */
-}
-
 .theme-toggle-circle {
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: none;
   
-  &.expand {
-    animation: themeRippleExpand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-  
-  &.contract {
-    animation: themeRippleContract 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  &.expanding {
+    animation: themeExpand 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
   }
 }
 

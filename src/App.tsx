@@ -155,7 +155,6 @@ function App() {
   // 主题切换动画状态
   const [isAnimating, setIsAnimating] = useState(false)
   const [animationOrigin, setAnimationOrigin] = useState({ x: 0, y: 0 })
-  const [animationPhase, setAnimationPhase] = useState<'expand' | 'contract' | null>(null)
 
   // 设置 HTML 根元素的 data-theme 属性
   useEffect(() => {
@@ -206,27 +205,18 @@ function App() {
     setAnimationOrigin({ x, y })
     setIsAnimating(true)
     
-    // 立即开始扩展动画
-    setAnimationPhase('expand')
-    
-    // 在动画中期切换主题（保持内容可见）
+    // 在动画开始后立即切换主题
     setTimeout(() => {
       const newDarkMode = !darkMode
       setDarkMode(newDarkMode)
       localStorage.setItem('dark-mode', newDarkMode.toString())
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
-    }, 300)
+    }, 150)
     
-    // 开始收缩动画
-    setTimeout(() => {
-      setAnimationPhase('contract')
-    }, 600)
-    
-    // 动画完全结束
+    // 动画结束
     setTimeout(() => {
       setIsAnimating(false)
-      setAnimationPhase(null)
-    }, 1000)
+    }, 800)
   }
 
   const handleThemeChange = (themeKey: string) => {
@@ -554,7 +544,7 @@ function App() {
       {/* 主题切换动画遮罩 */}
       {isAnimating && createPortal(
         <div
-          className={`theme-toggle-overlay ${animationPhase}`}
+          className="theme-toggle-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -567,7 +557,7 @@ function App() {
           }}
         >
           <div
-            className={`theme-toggle-circle ${animationPhase}`}
+            className="theme-toggle-circle expanding"
             style={{
               position: 'absolute',
               left: animationOrigin.x,
@@ -575,7 +565,7 @@ function App() {
               width: 0,
               height: 0,
               borderRadius: '50%',
-              background: darkMode ? '#000000' : '#ffffff',
+              background: !darkMode ? '#000000' : '#ffffff',
               transform: 'translate(-50%, -50%)',
               willChange: 'width, height, opacity'
             }}
