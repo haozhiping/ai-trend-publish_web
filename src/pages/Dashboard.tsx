@@ -161,29 +161,47 @@ const Dashboard: React.FC = () => {
         borderRadius: 12,
         border: `1px solid ${token.colorBorderSecondary}`,
         boxShadow: token.boxShadowTertiary,
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        height: '160px', // 固定高度确保统一
+        display: 'flex',
+        flexDirection: 'column'
       }}
-      bodyStyle={{ padding: 24 }}
+      bodyStyle={{ 
+        padding: 24, 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        overflow: 'hidden'
+      }}
     >
       <Flex justify="space-between" align="flex-start">
-        <Flex vertical gap={8} style={{ flex: 1 }}>
+        <Flex vertical gap={8} style={{ flex: 1, minWidth: 0 }}>
           <Text type="secondary" style={{ fontSize: 14, fontWeight: 500 }}>
             {title}
           </Text>
           <Flex align="baseline" gap={8}>
             <Text style={{ 
-              fontSize: 28, 
+              fontSize: title === '成功率' || title === '总阅读量' ? 24 : 28, 
               fontWeight: 700, 
               color,
               lineHeight: 1,
-              fontFamily: 'tabular-nums'
+              fontFamily: 'tabular-nums',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }}>
               {prefix}{value}{suffix}
             </Text>
             {trend && (
               <Tag 
                 color={trend > 0 ? 'success' : 'error'} 
-                style={{ margin: 0, fontSize: 12, fontWeight: 500 }}
+                style={{ 
+                  margin: 0, 
+                  fontSize: 12, 
+                  fontWeight: 500,
+                  flexShrink: 0
+                }}
                 icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
               >
                 {Math.abs(trend)}%
@@ -191,7 +209,12 @@ const Dashboard: React.FC = () => {
             )}
           </Flex>
           {description && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text type="secondary" style={{ 
+              fontSize: 12,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
               {description}
             </Text>
           )}
@@ -204,7 +227,8 @@ const Dashboard: React.FC = () => {
           borderRadius: 8,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          flexShrink: 0
         }}>
           {icon}
         </div>
