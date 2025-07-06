@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { 
   Layout, 
   Menu, 
@@ -150,6 +151,10 @@ function App() {
 
   // 通知数量
   const [notificationCount, setNotificationCount] = useState(3)
+  
+  // 主题切换动画状态
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [animationOrigin, setAnimationOrigin] = useState({ x: 0, y: 0 })
 
   // 设置 HTML 根元素的 data-theme 属性
   useEffect(() => {
@@ -189,11 +194,29 @@ function App() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
-  const toggleTheme = () => {
-    const newDarkMode = !darkMode
-    setDarkMode(newDarkMode)
-    localStorage.setItem('dark-mode', newDarkMode.toString())
-    document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
+  const toggleTheme = (event: React.MouseEvent) => {
+    if (isAnimating) return
+    
+    // 获取点击位置
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = rect.left + rect.width / 2
+    const y = rect.top + rect.height / 2
+    
+    setAnimationOrigin({ x, y })
+    setIsAnimating(true)
+    
+    // 延迟切换主题，让动画先开始
+    setTimeout(() => {
+      const newDarkMode = !darkMode
+      setDarkMode(newDarkMode)
+      localStorage.setItem('dark-mode', newDarkMode.toString())
+      document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
+      
+      // 动画结束后清理状态
+      setTimeout(() => {
+        setIsAnimating(false)
+      }, 500)
+    }, 200)
   }
 
   const handleThemeChange = (themeKey: string) => {
@@ -438,6 +461,7 @@ function App() {
                     icon={darkMode ? <SunOutlined /> : <MoonOutlined />}
                     onClick={toggleTheme}
                     className="header-action-btn"
+                    disabled={isAnimating}
                   />
                 </Tooltip>
 
@@ -516,6 +540,37 @@ function App() {
         onThemeChange={handleThemeChange}
         onDarkModeChange={handleDarkModeChange}
       />
+      
+      {/* 主题切换动画遮罩 */}
+      {isAnimating && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            pointerEvents: 'none',
+            zIndex: 9999,
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              left: animationOrigin.x,
+              top: animationOrigin.y,
+              width: 0,
+              height: 0,
+              borderRadius: '50%',
+              background: darkMode ? '#000000' : '#ffffff',
+              transform: 'translate(-50%, -50%)',
+              animation: 'themeToggleExpand 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            }}
+          />
+        </div>,
+        document.body
+      )}
     </ConfigProvider>
   )
 }

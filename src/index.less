@@ -101,6 +101,69 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* 主题切换动画 */
+@keyframes themeToggleExpand {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    width: 200vmax;
+    height: 200vmax;
+    opacity: 1;
+  }
+}
+
+/* 主题切换按钮动画效果 */
+.header-action-btn {
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  
+  &:hover::before {
+    width: 40px;
+    height: 40px;
+  }
+  
+  &:active::before {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.1s ease;
+  }
+}
+
+[data-theme='dark'] .header-action-btn {
+  &::before {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  &:hover::before {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  
+  &:active::before {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
 /* 工具类 */
 .fade-in { animation: fadeIn 0.3s ease-out; }
 .fade-in-up { animation: fadeInUp 0.6s ease-out; }
