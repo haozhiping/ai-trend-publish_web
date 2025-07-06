@@ -101,25 +101,31 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* 主题切换动画 */
-@keyframes themeExpand {
+/* 主题切换动画 - 重新设计 */
+@keyframes themeRippleExpand {
   0% {
     width: 0;
     height: 0;
-    opacity: 1;
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.6;
   }
   100% {
-    width: 150vmax;
-    height: 150vmax;
-    opacity: 1;
+    width: 200vmax;
+    height: 200vmax;
+    opacity: 0.4;
   }
 }
 
-@keyframes themeContract {
+@keyframes themeRippleContract {
   0% {
-    width: 150vmax;
-    height: 150vmax;
-    opacity: 1;
+    width: 200vmax;
+    height: 200vmax;
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.6;
   }
   100% {
     width: 0;
@@ -130,28 +136,31 @@ body {
 
 /* 主题切换遮罩层 */
 .theme-toggle-overlay {
+  backdrop-filter: blur(0px);
+  transition: backdrop-filter 0.3s ease;
+  
   &.expand {
-    animation: none;
+    backdrop-filter: blur(2px);
   }
   
   &.contract {
-    animation: none;
+    backdrop-filter: blur(0px);
   }
 }
 
 .theme-toggle-circle {
-  transition: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
   
   &.expand {
-    animation: themeExpand 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    animation: themeRippleExpand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
   
   &.contract {
-    animation: themeContract 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    animation: themeRippleContract 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 }
 
-/* 主题切换按钮动画效果 */
+/* 主题切换按钮增强效果 */
 .header-action-btn {
   position: relative;
   overflow: hidden;
@@ -166,7 +175,7 @@ body {
     height: 0;
     border-radius: 50%;
     background: currentColor;
-    opacity: 0.1;
+    opacity: 0;
     transform: translate(-50%, -50%);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
@@ -176,20 +185,24 @@ body {
   &:hover::before {
     width: 32px;
     height: 32px;
-    opacity: 0.15;
+    opacity: 0.1;
   }
   
-  &:active::before {
-    width: 40px;
-    height: 40px;
-    opacity: 0.2;
-    transition: all 0.15s ease;
+  &:active {
+    transform: scale(0.95);
+    
+    &::before {
+      width: 40px;
+      height: 40px;
+      opacity: 0.2;
+      transition: all 0.15s ease;
+    }
   }
   
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-    transform: scale(0.95);
+    transform: scale(0.9);
     
     &::before {
       display: none;
@@ -197,46 +210,39 @@ body {
   }
 }
 
-[data-theme='dark'] .header-action-btn {
-  &::before {
-    background: currentColor;
-    opacity: 0.1;
-  }
-  
-  &:hover::before {
-    opacity: 0.15;
-  }
-  
-  &:active::before {
-    opacity: 0.2;
-  }
-}
-
-/* 页面过渡优化 */
+/* 主题切换时的页面过渡优化 */
 html {
-  transition: none !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-html[data-theme] {
-  transition: none !important;
-}
-
-/* 防止动画期间的意外过渡 */
-.theme-toggle-overlay.expand ~ * {
-  transition: none !important;
-}
-
-.theme-toggle-overlay.contract ~ * {
-  transition: none !important;
-}
-
-/* 确保动画期间页面元素不闪烁 */
 body {
-  &.theme-animating {
-    * {
-      transition: none !important;
-    }
-  }
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 确保关键元素在主题切换时有平滑过渡 */
+.ant-layout,
+.ant-card,
+.ant-btn,
+.ant-input,
+.ant-select-selector,
+.ant-table,
+.pro-header,
+.pro-sider {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+}
+
+/* 动画期间保持内容可见性 */
+.theme-toggle-overlay {
+  pointer-events: none;
+  mix-blend-mode: normal;
+}
+
+.theme-toggle-circle {
+  mix-blend-mode: multiply;
+}
+
+[data-theme='dark'] .theme-toggle-circle {
+  mix-blend-mode: screen;
 }
 
 /* 工具类 */

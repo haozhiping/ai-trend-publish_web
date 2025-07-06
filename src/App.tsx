@@ -198,9 +198,6 @@ function App() {
   const toggleTheme = (event: React.MouseEvent) => {
     if (isAnimating) return
     
-    // 添加body类防止闪烁
-    document.body.classList.add('theme-animating')
-    
     // 获取点击位置
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const x = rect.left + rect.width / 2
@@ -208,25 +205,28 @@ function App() {
     
     setAnimationOrigin({ x, y })
     setIsAnimating(true)
+    
+    // 立即开始扩展动画
     setAnimationPhase('expand')
     
-    // 第一阶段：扩展动画
+    // 在动画中期切换主题（保持内容可见）
     setTimeout(() => {
       const newDarkMode = !darkMode
       setDarkMode(newDarkMode)
       localStorage.setItem('dark-mode', newDarkMode.toString())
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
-      
-      // 开始收缩动画
-      setAnimationPhase('contract')
-    }, 400)
+    }, 300)
     
-    // 第二阶段：收缩动画结束
+    // 开始收缩动画
+    setTimeout(() => {
+      setAnimationPhase('contract')
+    }, 600)
+    
+    // 动画完全结束
     setTimeout(() => {
       setIsAnimating(false)
       setAnimationPhase(null)
-      document.body.classList.remove('theme-animating')
-    }, 800)
+    }, 1000)
   }
 
   const handleThemeChange = (themeKey: string) => {
