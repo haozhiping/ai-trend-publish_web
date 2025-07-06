@@ -558,7 +558,7 @@ function App() {
             pointerEvents: 'none',
             zIndex: 9999,
             overflow: 'hidden',
-            mixBlendMode: 'difference'
+            background: 'transparent'
           }}
         >
           <div
@@ -570,10 +570,13 @@ function App() {
               width: 0,
               height: 0,
               borderRadius: '50%',
-              background: nextTheme ? '#ffffff' : '#000000',
+              background: nextTheme ? '#000000' : '#ffffff',
               transform: 'translate(-50%, -50%)',
               willChange: 'width, height',
-              animation: 'themeToggleExpand 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards'
+              animation: 'themeToggleExpand 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              boxShadow: nextTheme ? 
+                '0 0 0 2px rgba(0, 0, 0, 0.1)' : 
+                '0 0 0 2px rgba(255, 255, 255, 0.1)'
             }}
           />
         </div>,

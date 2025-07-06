@@ -106,28 +106,11 @@ body {
   0% {
     width: 0;
     height: 0;
-    opacity: 1;
-  }
-  50% {
-    opacity: 1;
-    width: 100vmax;
-    height: 100vmax;
   }
   100% {
-    width: 100vmax;
-    height: 100vmax;
-    opacity: 0;
+    width: 300vmax;
+    height: 300vmax;
   }
-}
-
-/* 主题切换遮罩层 */
-.theme-toggle-overlay {
-  backdrop-filter: blur(0px);
-  transition: backdrop-filter 0.3s ease;
-}
-
-.theme-toggle-circle {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 /* 主题切换按钮动画效果 */
@@ -188,12 +171,6 @@ body {
   &:active::before {
     opacity: 0.2;
   }
-}
-
-/* 防止动画期间的闪烁 */
-.theme-toggle-overlay * {
-  transition: none !important;
-  animation-fill-mode: both !important;
 }
 
 /* 工具类 */
