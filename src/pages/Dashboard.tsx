@@ -174,8 +174,33 @@ const Dashboard: React.FC = () => {
         overflow: 'hidden'
       }}
     >
-      <Flex justify="space-between" align="flex-start" style={{ height: '100%' }}>
-        <Flex vertical gap={8} style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'
+      }}>
+        {/* 右上角图标 */}
+        <div style={{ 
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          fontSize: 24, 
+          color: color,
+          background: `${color}15`,
+          padding: 12,
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 48,
+          height: 48
+        }}>
+          {icon}
+        </div>
+        
+        {/* 主要内容区域 */}
+        <Flex vertical gap={8} style={{ flex: 1, paddingRight: 60 }}>
           <Text type="secondary" style={{ fontSize: 14, fontWeight: 500 }}>
             {title}
           </Text>
@@ -193,58 +218,55 @@ const Dashboard: React.FC = () => {
               {prefix}{value}{suffix}
             </Text>
           </div>
-          
-          {/* 底部区域：描述文字和趋势标签 */}
-          <div style={{ 
-            marginTop: 'auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            gap: 8
-          }}>
-            {description && (
-              <Text type="secondary" style={{ 
-                fontSize: 12,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                flex: 1
-              }}>
-                {description}
-              </Text>
-            )}
-            {trend && (
-              <Tag 
-                color={trend > 0 ? 'success' : 'error'} 
-                style={{ 
-                  margin: 0, 
-                  fontSize: 11, 
-                  fontWeight: 500,
-                  flexShrink: 0,
-                  padding: '2px 6px',
-                  lineHeight: 1.2
-                }}
-                icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-              >
-                {Math.abs(trend)}%
-              </Tag>
-            )}
-          </div>
         </Flex>
+        
+        {/* 底部区域：描述文字和趋势标签 */}
         <div style={{ 
-          fontSize: 24, 
-          color: color,
-          background: `${color}15`,
-          padding: 12,
-          borderRadius: 8,
+          marginTop: 'auto',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: 8,
+          paddingRight: 60
         }}>
-          {icon}
+          {description && (
+            <Text type="secondary" style={{ 
+              fontSize: 12,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1
+            }}>
+              {description}
+            </Text>
+          )}
         </div>
-      </Flex>
+        
+        {/* 趋势标签 - 与右上角图标对齐 */}
+        {trend && (
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}>
+            <Tag 
+              color={trend > 0 ? 'success' : 'error'} 
+              style={{ 
+                margin: 0, 
+                fontSize: 11, 
+                fontWeight: 500,
+                padding: '2px 6px',
+                lineHeight: 1.2
+              }}
+              icon={trend > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+            >
+              {Math.abs(trend)}%
+            </Tag>
+          </div>
+        )}
+      </div>
     </Card>
   )
 
