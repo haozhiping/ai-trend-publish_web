@@ -38,7 +38,8 @@ import {
   UserOutlined,
   CalendarOutlined,
   DownloadOutlined,
-  FilterOutlined
+  FilterOutlined,
+  ArrowDownOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -255,7 +256,7 @@ const TrendAnalysisModal: React.FC<TrendAnalysisModalProps> = ({ visible, onClos
                       />
                       <div style={{ marginTop: 8 }}>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          <TrendingDownOutlined style={{ color: token.colorError }} /> 较上期下降 2.1%
+                          <ArrowDownOutlined style={{ color: token.colorError }} /> 较上期下降 2.1%
                         </Text>
                       </div>
                     </Card>
