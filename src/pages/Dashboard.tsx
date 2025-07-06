@@ -42,8 +42,7 @@ import {
   LineChartOutlined,
   CalendarOutlined,
   FilterOutlined,
-  MoreOutlined,
-  TrendingUpOutlined
+  MoreOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
