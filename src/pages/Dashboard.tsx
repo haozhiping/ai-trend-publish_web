@@ -42,8 +42,7 @@ import {
   LineChartOutlined,
   CalendarOutlined,
   FilterOutlined,
-  MoreOutlined,
-  AreaChartOutlined
+  MoreOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
@@ -62,6 +61,11 @@ import {
   Bar
 } from 'recharts'
 import dayjs from 'dayjs'
+import TrendAnalysisModal from '../components/TrendAnalysisModal'
+import PlatformReportModal from '../components/PlatformReportModal'
+import ActivityFilterDrawer from '../components/ActivityFilterDrawer'
+import AllActivitiesModal from '../components/AllActivitiesModal'
+import ApiQuotaConfigModal from '../components/ApiQuotaConfigModal'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -71,6 +75,13 @@ const Dashboard: React.FC = () => {
   const { token } = theme.useToken()
   const [timeRange, setTimeRange] = useState<string>('7d')
   const [chartType, setChartType] = useState<string>('area')
+  
+  // 模态框状态
+  const [trendModalVisible, setTrendModalVisible] = useState(false)
+  const [platformReportVisible, setPlatformReportVisible] = useState(false)
+  const [activityFilterVisible, setActivityFilterVisible] = useState(false)
+  const [allActivitiesVisible, setAllActivitiesVisible] = useState(false)
+  const [apiConfigVisible, setApiConfigVisible] = useState(false)
   
   const [systemStatus] = useState({
     status: 'running',
@@ -547,13 +558,18 @@ const Dashboard: React.FC = () => {
                   value={chartType}
                   onChange={setChartType}
                   options={[
-                    { label: '面积图', value: 'area', icon: <AreaChartOutlined /> },
+                    { label: '面积图', value: 'area', icon: <PieChartOutlined /> },
                     { label: '折线图', value: 'line', icon: <LineChartOutlined /> },
                     { label: '柱状图', value: 'bar', icon: <BarChartOutlined /> }
                   ]}
                   size="small"
                 />
-                <Button size="small" type="link" icon={<MoreOutlined />}>
+                <Button 
+                  size="small" 
+                  type="link" 
+                  icon={<MoreOutlined />}
+                  onClick={() => setTrendModalVisible(true)}
+                >
                   更多
                 </Button>
               </Space>
@@ -578,7 +594,11 @@ const Dashboard: React.FC = () => {
               </Flex>
             }
             extra={
-              <Button size="small" type="link">
+              <Button 
+                size="small" 
+                type="link"
+                onClick={() => setPlatformReportVisible(true)}
+              >
                 详细报告
               </Button>
             }
@@ -644,10 +664,20 @@ const Dashboard: React.FC = () => {
             }
             extra={
               <Space>
-                <Button size="small" icon={<FilterOutlined />}>
+                <Button 
+                  size="small" 
+                  icon={<FilterOutlined />}
+                  onClick={() => setActivityFilterVisible(true)}
+                >
                   筛选
                 </Button>
-                <Button size="small" type="link">查看全部</Button>
+                <Button 
+                  size="small" 
+                  type="link"
+                  onClick={() => setAllActivitiesVisible(true)}
+                >
+                  查看全部
+                </Button>
               </Space>
             }
             style={{
@@ -709,10 +739,20 @@ const Dashboard: React.FC = () => {
             }
             extra={
               <Space>
-                <Button size="small" icon={<SettingOutlined />}>
+                <Button 
+                  size="small" 
+                  icon={<SettingOutlined />}
+                  onClick={() => setApiConfigVisible(true)}
+                >
                   配置
                 </Button>
-                <Button size="small" type="link">管理配置</Button>
+                <Button 
+                  size="small" 
+                  type="link"
+                  onClick={() => setApiConfigVisible(true)}
+                >
+                  管理配置
+                </Button>
               </Space>
             }
             style={{
@@ -929,6 +969,36 @@ const Dashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* 模态框组件 */}
+      <TrendAnalysisModal
+        visible={trendModalVisible}
+        onClose={() => setTrendModalVisible(false)}
+      />
+
+      <PlatformReportModal
+        visible={platformReportVisible}
+        onClose={() => setPlatformReportVisible(false)}
+      />
+
+      <ActivityFilterDrawer
+        visible={activityFilterVisible}
+        onClose={() => setActivityFilterVisible(false)}
+        onFilter={(filters) => {
+          console.log('应用筛选:', filters)
+          // 这里处理筛选逻辑
+        }}
+      />
+
+      <AllActivitiesModal
+        visible={allActivitiesVisible}
+        onClose={() => setAllActivitiesVisible(false)}
+      />
+
+      <ApiQuotaConfigModal
+        visible={apiConfigVisible}
+        onClose={() => setApiConfigVisible(false)}
+      />
     </div>
   )
 }
