@@ -206,28 +206,42 @@
     align-items: center;
     
     .ant-input-affix-wrapper {
-      border-radius: 20px;
-      background: #f5f5f5;
+      border-radius: 20px !important;
+      background: #f8f9fa !important;
       border: 1px solid transparent;
       height: 32px;
+      box-shadow: none !important;
       
-      &:hover, &:focus {
-        background: #fff;
-        border-color: #1677ff;
-        box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+      &:hover {
+        background: #fff !important;
+        border-color: #e8e8e8 !important;
+      }
+      
+      &:focus,
+      &.ant-input-focused {
+        background: #fff !important;
+        border-color: #1677ff !important;
+        box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.06) !important;
       }
       
       .ant-input {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        height: 30px;
-        line-height: 30px;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        height: 30px !important;
+        line-height: 30px !important;
+        font-size: 14px !important;
+        
+        &::placeholder {
+          color: #bfbfbf !important;
+          font-size: 14px !important;
+        }
       }
       
       .ant-input-prefix {
-        display: flex;
-        align-items: center;
+        display: flex !important;
+        align-items: center !important;
+        color: #bfbfbf !important;
       }
     }
   }
@@ -306,10 +320,30 @@
   
   .header-search {
     .ant-input-affix-wrapper {
-      background: #262626;
+      background: #262626 !important;
       
-      &:hover, &:focus {
-        background: #1f1f1f;
+      &:hover {
+        background: #1f1f1f !important;
+        border-color: #404040 !important;
+      }
+      
+      &:focus,
+      &.ant-input-focused {
+        background: #1f1f1f !important;
+        border-color: #1677ff !important;
+        box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1) !important;
+      }
+      
+      .ant-input {
+        color: #fff !important;
+        
+        &::placeholder {
+          color: #595959 !important;
+        }
+      }
+      
+      .ant-input-prefix {
+        color: #595959 !important;
       }
     }
   }
