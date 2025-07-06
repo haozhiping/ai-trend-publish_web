@@ -46,7 +46,8 @@ import {
   FullscreenExitOutlined,
   ReloadOutlined,
   NotificationOutlined,
-  FileProtectOutlined
+  FileProtectOutlined,
+  GithubOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -445,6 +446,15 @@ function App() {
                 </Tooltip>
 
                 <NotificationCenter count={notificationCount} />
+
+                <Tooltip title="查看源码">
+                  <Button
+                    type="text"
+                    icon={<GithubOutlined />}
+                    onClick={() => window.open('https://github.com/kilimro/ai-trend-publish_web', '_blank')}
+                    className="header-action-btn github-link"
+                  />
+                </Tooltip>
 
                 <Tooltip title="主题设置">
                   <Button
