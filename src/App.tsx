@@ -155,7 +155,7 @@ function App() {
   // 主题切换动画状态
   const [isAnimating, setIsAnimating] = useState(false)
   const [animationOrigin, setAnimationOrigin] = useState({ x: 0, y: 0 })
-  const [nextTheme, setNextTheme] = useState<boolean | null>(null)
+  const [animationPhase, setAnimationPhase] = useState<'expand' | 'contract' | null>(null)
 
   // 设置 HTML 根元素的 data-theme 属性
   useEffect(() => {
@@ -198,7 +198,8 @@ function App() {
   const toggleTheme = (event: React.MouseEvent) => {
     if (isAnimating) return
     
-    const newDarkMode = !darkMode
+    // 添加body类防止闪烁
+    document.body.classList.add('theme-animating')
     
     // 获取点击位置
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
@@ -206,20 +207,25 @@ function App() {
     const y = rect.top + rect.height / 2
     
     setAnimationOrigin({ x, y })
-    setNextTheme(newDarkMode)
     setIsAnimating(true)
+    setAnimationPhase('expand')
     
-    // 在动画中间切换主题
+    // 第一阶段：扩展动画
     setTimeout(() => {
+      const newDarkMode = !darkMode
       setDarkMode(newDarkMode)
       localStorage.setItem('dark-mode', newDarkMode.toString())
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
-    }, 350) // 在动画中间切换
+      
+      // 开始收缩动画
+      setAnimationPhase('contract')
+    }, 400)
     
-    // 动画结束后清理状态
+    // 第二阶段：收缩动画结束
     setTimeout(() => {
       setIsAnimating(false)
-      setNextTheme(null)
+      setAnimationPhase(null)
+      document.body.classList.remove('theme-animating')
     }, 800)
   }
 
@@ -548,7 +554,7 @@ function App() {
       {/* 主题切换动画遮罩 */}
       {isAnimating && createPortal(
         <div
-          className="theme-toggle-overlay"
+          className={`theme-toggle-overlay ${animationPhase}`}
           style={{
             position: 'fixed',
             top: 0,
@@ -557,12 +563,11 @@ function App() {
             height: '100vh',
             pointerEvents: 'none',
             zIndex: 9999,
-            overflow: 'hidden',
-            mixBlendMode: 'difference'
+            overflow: 'hidden'
           }}
         >
           <div
-            className="theme-toggle-circle"
+            className={`theme-toggle-circle ${animationPhase}`}
             style={{
               position: 'absolute',
               left: animationOrigin.x,
@@ -570,10 +575,9 @@ function App() {
               width: 0,
               height: 0,
               borderRadius: '50%',
-              background: nextTheme ? '#ffffff' : '#000000',
+              background: darkMode ? '#000000' : '#ffffff',
               transform: 'translate(-50%, -50%)',
-              willChange: 'width, height',
-              animation: 'themeToggleExpand 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards'
+              willChange: 'width, height, opacity'
             }}
           />
         </div>,

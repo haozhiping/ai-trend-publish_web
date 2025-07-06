@@ -102,32 +102,53 @@ body {
 }
 
 /* 主题切换动画 */
-@keyframes themeToggleExpand {
+@keyframes themeExpand {
   0% {
     width: 0;
     height: 0;
     opacity: 1;
   }
-  50% {
+  100% {
+    width: 150vmax;
+    height: 150vmax;
     opacity: 1;
-    width: 100vmax;
-    height: 100vmax;
+  }
+}
+
+@keyframes themeContract {
+  0% {
+    width: 150vmax;
+    height: 150vmax;
+    opacity: 1;
   }
   100% {
-    width: 100vmax;
-    height: 100vmax;
+    width: 0;
+    height: 0;
     opacity: 0;
   }
 }
 
 /* 主题切换遮罩层 */
 .theme-toggle-overlay {
-  backdrop-filter: blur(0px);
-  transition: backdrop-filter 0.3s ease;
+  &.expand {
+    animation: none;
+  }
+  
+  &.contract {
+    animation: none;
+  }
 }
 
 .theme-toggle-circle {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  transition: none;
+  
+  &.expand {
+    animation: themeExpand 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
+  
+  &.contract {
+    animation: themeContract 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  }
 }
 
 /* 主题切换按钮动画效果 */
@@ -168,6 +189,7 @@ body {
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: scale(0.95);
     
     &::before {
       display: none;
@@ -190,10 +212,31 @@ body {
   }
 }
 
-/* 防止动画期间的闪烁 */
-.theme-toggle-overlay * {
+/* 页面过渡优化 */
+html {
   transition: none !important;
-  animation-fill-mode: both !important;
+}
+
+html[data-theme] {
+  transition: none !important;
+}
+
+/* 防止动画期间的意外过渡 */
+.theme-toggle-overlay.expand ~ * {
+  transition: none !important;
+}
+
+.theme-toggle-overlay.contract ~ * {
+  transition: none !important;
+}
+
+/* 确保动画期间页面元素不闪烁 */
+body {
+  &.theme-animating {
+    * {
+      transition: none !important;
+    }
+  }
 }
 
 /* 工具类 */
