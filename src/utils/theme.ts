@@ -107,10 +107,10 @@ export const getThemeConfig = (themeKey: string, isDark: boolean) => {
       },
       Menu: {
         itemBg: 'transparent',
-        itemSelectedBg: isDark ? preset.token.colorPrimary : `${preset.token.colorPrimary}15`,
-        itemSelectedColor: isDark ? '#ffffff' : preset.token.colorPrimary,
+        itemSelectedBg: preset.token.colorPrimary,
+        itemSelectedColor: '#ffffff',
         itemHoverBg: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
-        itemActiveBg: isDark ? preset.token.colorPrimary : `${preset.token.colorPrimary}15`,
+        itemActiveBg: preset.token.colorPrimary,
         itemColor: isDark ? 'rgba(255, 255, 255, 0.88)' : 'rgba(0, 0, 0, 0.88)',
         iconSize: 16,
         fontSize: 14,

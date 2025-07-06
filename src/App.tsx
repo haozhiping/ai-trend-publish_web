@@ -307,6 +307,12 @@ function App() {
 
   const themeConfig = useMemo(() => getThemeConfig(currentTheme, darkMode), [currentTheme, darkMode])
 
+  // 动态更新CSS变量
+  useEffect(() => {
+    const preset = themePresets[currentTheme as keyof typeof themePresets] || themePresets.default
+    document.documentElement.style.setProperty('--ant-primary-color', preset.token.colorPrimary)
+  }, [currentTheme])
+
   // 如果未认证，显示登录页面
   if (!isAuthenticated) {
     return (
