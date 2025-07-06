@@ -60,6 +60,7 @@ import Login from './components/Login'
 import UserProfile from './components/UserProfile'
 import GlobalSearch from './components/GlobalSearch'
 import ThemeSelector from './components/ThemeSelector'
+import NotificationCenter from './components/NotificationCenter'
 import { getCurrentTheme, saveTheme, getThemeConfig, themePresets } from './utils/theme'
 
 const { Header, Sider, Content } = Layout
@@ -420,15 +421,7 @@ function App() {
                   />
                 </Tooltip>
 
-                <Tooltip title="通知中心">
-                  <Badge count={notificationCount} size="small" offset={[0, 2]}>
-                    <Button
-                      type="text"
-                      icon={<BellOutlined />}
-                      className="header-action-btn"
-                    />
-                  </Badge>
-                </Tooltip>
+                <NotificationCenter count={notificationCount} />
 
                 <Tooltip title="主题设置">
                   <Button
