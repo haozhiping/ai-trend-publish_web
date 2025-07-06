@@ -72,6 +72,26 @@ const Dashboard: React.FC = () => {
   const [timeRange, setTimeRange] = useState<string>('7d')
   const [chartType, setChartType] = useState<string>('area')
   
+  // 公告数据
+  const [announcements] = useState([
+    {
+      id: '1',
+      title: '系统维护通知',
+      content: '系统将于今晚23:00-01:00进行维护升级，期间可能影响正常使用，请提前做好准备。',
+      type: 'warning',
+      isSticky: true,
+      publishTime: '2024-01-15 10:00:00'
+    },
+    {
+      id: '2',
+      title: '新功能上线公告',
+      content: 'AI内容排序功能已正式上线，支持更智能的内容筛选和排序，欢迎体验使用。',
+      type: 'success',
+      isSticky: false,
+      publishTime: '2024-01-14 09:00:00'
+    }
+  ])
+
   const [systemStatus] = useState({
     status: 'running',
     uptime: '2天 14小时 32分钟',
@@ -430,6 +450,27 @@ const Dashboard: React.FC = () => {
 
   return (
     <div style={{ animation: 'fadeInUp 0.6s ease-out' }}>
+      {/* 公告横幅 */}
+      {announcements.filter(a => a.isSticky).map(announcement => (
+        <Alert
+          key={announcement.id}
+          message={announcement.title}
+          description={announcement.content}
+          type={announcement.type as any}
+          showIcon
+          closable
+          style={{ 
+            marginBottom: 16,
+            borderRadius: 8
+          }}
+          action={
+            <Button size="small" type="link" onClick={() => navigate('/announcements')}>
+              查看更多
+            </Button>
+          }
+        />
+      ))}
+
       {/* 系统状态横幅 */}
       <Alert
         message={

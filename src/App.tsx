@@ -43,7 +43,9 @@ import {
   BgColorsOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  NotificationOutlined,
+  FileProtectOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -53,6 +55,7 @@ import DataSources from './pages/DataSources'
 import PublishHistory from './pages/PublishHistory'
 import ConfigManagement from './pages/ConfigManagement'
 import SystemLogs from './pages/SystemLogs'
+import AnnouncementManagement from './pages/AnnouncementManagement'
 import Login from './components/Login'
 import UserProfile from './components/UserProfile'
 import GlobalSearch from './components/GlobalSearch'
@@ -107,9 +110,15 @@ const menuItems = [
   },
   { 
     key: '/logs', 
-    icon: <BellOutlined />, 
+    icon: <FileProtectOutlined />, 
     label: '系统日志',
     breadcrumb: '系统日志'
+  },
+  { 
+    key: '/announcements', 
+    icon: <NotificationOutlined />, 
+    label: '通知公告',
+    breadcrumb: '通知公告管理'
   }
 ]
 
@@ -484,6 +493,7 @@ function App() {
                 <Route path="/publish-history" element={<PublishHistory />} />
                 <Route path="/config" element={<ConfigManagement />} />
                 <Route path="/logs" element={<SystemLogs />} />
+                <Route path="/announcements" element={<AnnouncementManagement />} />
               </Routes>
             </div>
           </Content>
