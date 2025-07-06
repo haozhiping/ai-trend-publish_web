@@ -36,7 +36,6 @@ import {
   QuestionCircleOutlined,
   GithubOutlined,
   HomeOutlined,
-  SearchOutlined,
   DownOutlined,
   EditOutlined,
   KeyOutlined,
@@ -62,7 +61,6 @@ import { getCurrentTheme, saveTheme, getThemeConfig } from './utils/theme'
 
 const { Header, Sider, Content } = Layout
 const { Title, Text } = Typography
-const { Search } = Input
 
 const menuItems = [
   { 
@@ -388,19 +386,6 @@ function App() {
 
               {/* 右侧 */}
               <Flex align="center" gap={4}>
-                {/* 搜索框 */}
-                <div className="header-search">
-                  <Search
-                    placeholder="搜索菜单、内容..."
-                    onSearch={() => setSearchVisible(true)}
-                    onClick={() => setSearchVisible(true)}
-                    style={{ width: 240 }}
-                    allowClear
-                  />
-                </div>
-
-                <Divider type="vertical" className="header-divider" />
-
                 {/* 功能按钮 */}
                 <Tooltip title="刷新页面">
                   <Button
