@@ -319,6 +319,25 @@
   background: #000 !important;
 }
 
+/* GitHub 链接样式 */
+.github-link {
+  color: #24292e !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    color: #0366d6 !important;
+    transform: scale(1.1) !important;
+  }
+}
+
+[data-theme='dark'] .github-link {
+  color: #f0f6fc !important;
+  
+  &:hover {
+    color: #58a6ff !important;
+  }
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .pro-header {

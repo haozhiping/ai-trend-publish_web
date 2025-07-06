@@ -84,6 +84,16 @@ const ConfigManagement: React.FC = () => {
           type="info"
           showIcon
           style={{ marginBottom: 24 }}
+          action={
+            <Button 
+              size="small" 
+              type="link" 
+              icon={<GithubOutlined />}
+              onClick={() => window.open('https://github.com/kilimro/ai-trend-publish_web', '_blank')}
+            >
+              查看文档
+            </Button>
+          }
         />
 
         <Form
