@@ -136,16 +136,7 @@ body {
 
 /* 主题切换遮罩层 */
 .theme-toggle-overlay {
-  backdrop-filter: blur(0px);
-  transition: backdrop-filter 0.3s ease;
-  
-  &.expand {
-    backdrop-filter: blur(2px);
-  }
-  
-  &.contract {
-    backdrop-filter: blur(0px);
-  }
+  /* 移除模糊效果，保持其他动画效果 */
 }
 
 .theme-toggle-circle {
