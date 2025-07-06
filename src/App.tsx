@@ -46,8 +46,7 @@ import {
   FullscreenExitOutlined,
   ReloadOutlined,
   NotificationOutlined,
-  FileProtectOutlined,
-  GithubOutlined
+  FileProtectOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
