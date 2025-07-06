@@ -198,29 +198,28 @@ function App() {
   const toggleTheme = (event: React.MouseEvent) => {
     if (isAnimating) return
     
-    const newDarkMode = !darkMode
-    
     // 获取点击位置
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     const x = rect.left + rect.width / 2
     const y = rect.top + rect.height / 2
     
     setAnimationOrigin({ x, y })
-    setNextTheme(newDarkMode)
+    setNextTheme(!darkMode)
     setIsAnimating(true)
     
-    // 在动画中间切换主题
+    // 在动画进行到一半时切换主题
     setTimeout(() => {
+      const newDarkMode = !darkMode
       setDarkMode(newDarkMode)
       localStorage.setItem('dark-mode', newDarkMode.toString())
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
-    }, 350) // 在动画中间切换
+    }, 400) // 在动画中间切换
     
     // 动画结束后清理状态
     setTimeout(() => {
       setIsAnimating(false)
       setNextTheme(null)
-    }, 800)
+    }, 900)
   }
 
   const handleThemeChange = (themeKey: string) => {
@@ -548,7 +547,6 @@ function App() {
       {/* 主题切换动画遮罩 */}
       {isAnimating && createPortal(
         <div
-          className="theme-toggle-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -557,26 +555,21 @@ function App() {
             height: '100vh',
             pointerEvents: 'none',
             zIndex: 9999,
-            overflow: 'hidden',
-            background: 'transparent'
+            overflow: 'hidden'
           }}
         >
           <div
-            className="theme-toggle-circle"
             style={{
               position: 'absolute',
               left: animationOrigin.x,
               top: animationOrigin.y,
-              width: 0,
-              height: 0,
+              width: '0px',
+              height: '0px',
               borderRadius: '50%',
-              background: nextTheme ? '#000000' : '#ffffff',
+              background: nextTheme ? '#141414' : '#ffffff',
               transform: 'translate(-50%, -50%)',
-              willChange: 'width, height',
-              animation: 'themeToggleExpand 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
-              boxShadow: nextTheme ? 
-                '0 0 0 2px rgba(0, 0, 0, 0.1)' : 
-                '0 0 0 2px rgba(255, 255, 255, 0.1)'
+              animation: 'themeCircleExpand 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+              mixBlendMode: 'normal'
             }}
           />
         </div>,

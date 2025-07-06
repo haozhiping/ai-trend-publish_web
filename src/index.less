@@ -102,74 +102,21 @@ body {
 }
 
 /* 主题切换动画 */
-@keyframes themeToggleExpand {
+@keyframes themeCircleExpand {
   0% {
-    width: 0;
-    height: 0;
+    width: 0px;
+    height: 0px;
+    opacity: 1;
+  }
+  50% {
+    width: 150vmax;
+    height: 150vmax;
+    opacity: 1;
   }
   100% {
-    width: 300vmax;
-    height: 300vmax;
-  }
-}
-
-/* 主题切换按钮动画效果 */
-.header-action-btn {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.1;
-    transform: translate(-50%, -50%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-    z-index: 0;
-  }
-  
-  &:hover::before {
-    width: 32px;
-    height: 32px;
-    opacity: 0.15;
-  }
-  
-  &:active::before {
-    width: 40px;
-    height: 40px;
-    opacity: 0.2;
-    transition: all 0.15s ease;
-  }
-  
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    
-    &::before {
-      display: none;
-    }
-  }
-}
-
-[data-theme='dark'] .header-action-btn {
-  &::before {
-    background: currentColor;
-    opacity: 0.1;
-  }
-  
-  &:hover::before {
-    opacity: 0.15;
-  }
-  
-  &:active::before {
-    opacity: 0.2;
+    width: 200vmax;
+    height: 200vmax;
+    opacity: 1;
   }
 }
 
