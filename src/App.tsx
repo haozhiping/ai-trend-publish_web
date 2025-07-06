@@ -206,11 +206,8 @@ function App() {
     setAnimationOrigin({ x, y })
     setIsAnimating(true)
     
-    // 根据当前主题决定动画方向
-    // 明亮 -> 暗色：扩展（黑色圆形扩展覆盖）
-    // 暗色 -> 明亮：收缩（黑色圆形收缩露出亮色）
-    const willBeDark = !darkMode
-    setAnimationPhase(willBeDark ? 'expand' : 'contract')
+    // 立即开始扩展动画
+    setAnimationPhase('expand')
     
     // 在动画中期切换主题（保持内容可见）
     setTimeout(() => {
@@ -220,10 +217,9 @@ function App() {
       document.documentElement.setAttribute('data-theme', newDarkMode ? 'dark' : 'light')
     }, 300)
     
-    // 如果是扩展动画，在中期后开始收缩
-    // 如果是收缩动画，在中期后开始扩展
+    // 开始收缩动画
     setTimeout(() => {
-      setAnimationPhase(willBeDark ? 'contract' : 'expand')
+      setAnimationPhase('contract')
     }, 600)
     
     // 动画完全结束
@@ -580,7 +576,6 @@ function App() {
               height: 0,
               borderRadius: '50%',
               background: darkMode ? '#000000' : '#ffffff',
-              background: !darkMode ? '#000000' : '#ffffff',
               transform: 'translate(-50%, -50%)',
               willChange: 'width, height, opacity'
             }}
