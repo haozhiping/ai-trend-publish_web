@@ -102,22 +102,98 @@ body {
 }
 
 /* 主题切换动画 */
-@keyframes themeCircleExpand {
+@keyframes themeToggleExpand {
   0% {
-    width: 0px;
-    height: 0px;
+    width: 0;
+    height: 0;
     opacity: 1;
   }
   50% {
-    width: 150vmax;
-    height: 150vmax;
     opacity: 1;
+    width: 100vmax;
+    height: 100vmax;
   }
   100% {
-    width: 200vmax;
-    height: 200vmax;
-    opacity: 1;
+    width: 100vmax;
+    height: 100vmax;
+    opacity: 0;
   }
+}
+
+/* 主题切换遮罩层 */
+.theme-toggle-overlay {
+  backdrop-filter: blur(0px);
+  transition: backdrop-filter 0.3s ease;
+}
+
+.theme-toggle-circle {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+/* 主题切换按钮动画效果 */
+.header-action-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.1;
+    transform: translate(-50%, -50%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  &:hover::before {
+    width: 32px;
+    height: 32px;
+    opacity: 0.15;
+  }
+  
+  &:active::before {
+    width: 40px;
+    height: 40px;
+    opacity: 0.2;
+    transition: all 0.15s ease;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    
+    &::before {
+      display: none;
+    }
+  }
+}
+
+[data-theme='dark'] .header-action-btn {
+  &::before {
+    background: currentColor;
+    opacity: 0.1;
+  }
+  
+  &:hover::before {
+    opacity: 0.15;
+  }
+  
+  &:active::before {
+    opacity: 0.2;
+  }
+}
+
+/* 防止动画期间的闪烁 */
+.theme-toggle-overlay * {
+  transition: none !important;
+  animation-fill-mode: both !important;
 }
 
 /* 工具类 */
