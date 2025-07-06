@@ -108,7 +108,7 @@ body {
     height: 0;
     opacity: 1;
   }
-  80% {
+  50% {
     opacity: 1;
     width: 100vmax;
     height: 100vmax;
@@ -116,19 +116,18 @@ body {
   100% {
     width: 100vmax;
     height: 100vmax;
-    opacity: 1;
+    opacity: 0;
   }
 }
 
 /* 主题切换遮罩层 */
 .theme-toggle-overlay {
-  backdrop-filter: blur(1px);
-  transition: backdrop-filter 0.2s ease;
+  backdrop-filter: blur(0px);
+  transition: backdrop-filter 0.3s ease;
 }
 
 .theme-toggle-circle {
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  filter: blur(0.5px);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
 }
 
 /* 主题切换按钮动画效果 */
