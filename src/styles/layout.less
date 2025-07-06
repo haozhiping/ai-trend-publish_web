@@ -206,51 +206,10 @@
     height: 32px;
     border-radius: 6px;
     color: #666;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.1;
-      transform: translate(-50%, -50%);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      pointer-events: none;
-      z-index: 0;
-    }
     
     &:hover {
       background: #f5f5f5;
       color: #1677ff;
-      
-      &::before {
-        width: 32px;
-        height: 32px;
-        opacity: 0.15;
-      }
-    }
-    
-    &:active::before {
-      width: 40px;
-      height: 40px;
-      opacity: 0.2;
-      transition: all 0.15s ease;
-    }
-    
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      
-      &::before {
-        display: none;
-      }
     }
   }
   
@@ -320,14 +279,6 @@
     &:hover {
       background: #262626;
       color: #1677ff;
-      
-      &::before {
-        opacity: 0.15;
-      }
-    }
-    
-    &:active::before {
-      opacity: 0.2;
     }
   }
   
