@@ -45,7 +45,8 @@ import {
   FilterOutlined,
   MoreOutlined,
   FileProtectOutlined,
-  StarOutlined
+  StarOutlined,
+  AreaChartOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
