@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Button, 
@@ -25,71 +25,74 @@ import {
   ClockCircleOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
 
 interface Workflow {
-  id: string
+  id: number
   name: string
   type: string
   status: 'running' | 'stopped' | 'error'
-  schedule: string
-  lastRun: string
-  nextRun: string
-  description: string
+  schedule?: string | null
+  lastRun?: string | null
+  nextRun?: string | null
+  description?: string | null
 }
 
 const WorkflowManagement: React.FC = () => {
-  const [workflows, setWorkflows] = useState<Workflow[]>([
-    {
-      id: '1',
-      name: '微信文章工作流',
-      type: 'WeixinWorkflow',
-      status: 'running',
-      schedule: '0 3 * * *',
-      lastRun: '2024-01-15 03:00:00',
-      nextRun: '2024-01-16 03:00:00',
-      description: '每日凌晨3点自动抓取AI相关内容并发布到微信公众号'
-    },
-    {
-      id: '2',
-      name: 'AI模型排行榜',
-      type: 'WeixinAIBenchWorkflow',
-      status: 'running',
-      schedule: '0 3 * * 2',
-      lastRun: '2024-01-14 03:00:00',
-      nextRun: '2024-01-21 03:00:00',
-      description: '每周二更新AI模型性能排行榜'
-    },
-    {
-      id: '3',
-      name: 'GitHub热门项目',
-      type: 'WeixinHelloGithubWorkflow',
-      status: 'running',
-      schedule: '0 3 * * 3',
-      lastRun: '2024-01-10 03:00:00',
-      nextRun: '2024-01-17 03:00:00',
-      description: '每周三发布GitHub热门AI项目推荐'
-    }
-  ])
+  const [workflows, setWorkflows] = useState<Workflow[]>([])
 
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null)
   const [form] = Form.useForm()
 
+  // 后端工作流类型（与后端 WorkflowType 枚举保持一致）
   const workflowTypes = [
-    { value: 'WeixinWorkflow', label: '微信文章工作流' },
-    { value: 'WeixinAIBenchWorkflow', label: 'AI模型排行榜' },
-    { value: 'WeixinHelloGithubWorkflow', label: 'GitHub热门项目' }
+    { value: 'weixin-article-workflow', label: '微信文章工作流' },
+    { value: 'weixin-aibench-workflow', label: 'AI模型排行榜' },
+    { value: 'weixin-hellogithub-workflow', label: 'GitHub热门项目' }
   ]
 
-  const handleStatusChange = (id: string, action: 'start' | 'stop') => {
-    setWorkflows(prev => prev.map(workflow => 
-      workflow.id === id 
-        ? { ...workflow, status: action === 'start' ? 'running' : 'stopped' }
-        : workflow
-    ))
-    message.success(`工作流已${action === 'start' ? '启动' : '停止'}`)
+  const loadWorkflows = async () => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/workflows`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '加载工作流失败')
+        return
+      }
+      setWorkflows(data.data || [])
+    } catch (e) {
+      console.error(e)
+      message.error('加载工作流失败，请检查后端服务')
+    }
+  }
+
+  useEffect(() => {
+    loadWorkflows()
+  }, [])
+
+  const handleStatusChange = async (id: number, action: 'start' | 'stop') => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/workflows/${id}/${action}`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || `工作流${action === 'start' ? '启动' : '停止'}失败`)
+        return
+      }
+      message.success(`工作流已${action === 'start' ? '启动' : '停止'}`)
+      loadWorkflows()
+    } catch (e) {
+      console.error(e)
+      message.error(`工作流${action === 'start' ? '启动' : '停止'}失败`)
+    }
   }
 
   const handleEdit = (workflow: Workflow) => {
@@ -101,9 +104,23 @@ const WorkflowManagement: React.FC = () => {
     setIsModalVisible(true)
   }
 
-  const handleDelete = (id: string) => {
-    setWorkflows(prev => prev.filter(workflow => workflow.id !== id))
-    message.success('工作流已删除')
+  const handleDelete = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/workflows/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '删除工作流失败')
+        return
+      }
+      message.success('工作流已删除')
+      loadWorkflows()
+    } catch (e) {
+      console.error(e)
+      message.error('删除工作流失败')
+    }
   }
 
   const handleSubmit = async () => {
@@ -111,26 +128,36 @@ const WorkflowManagement: React.FC = () => {
       const values = await form.validateFields()
       const scheduleTime = values.scheduleTime.format('H m')
       const schedule = `0 ${scheduleTime} * * *`
-      
-      if (editingWorkflow) {
-        setWorkflows(prev => prev.map(workflow =>
-          workflow.id === editingWorkflow.id
-            ? { ...workflow, ...values, schedule }
-            : workflow
-        ))
-        message.success('工作流已更新')
-      } else {
-        const newWorkflow: Workflow = {
-          id: Date.now().toString(),
-          ...values,
-          schedule,
-          status: 'stopped',
-          lastRun: '-',
-          nextRun: '-'
-        }
-        setWorkflows(prev => [...prev, newWorkflow])
-        message.success('工作流已创建')
+
+      const payload = {
+        name: values.name,
+        type: values.type,
+        description: values.description,
+        schedule
       }
+
+      let url = `${getApiBaseUrl()}/workflows`
+      let method: 'POST' | 'PUT' = 'POST'
+
+      if (editingWorkflow) {
+        url = `${getApiBaseUrl()}/workflows/${editingWorkflow.id}`
+        method = 'PUT'
+      }
+
+      const resp = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      })
+
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || (editingWorkflow ? '工作流已更新失败' : '工作流创建失败'))
+        return
+      }
+
+      message.success(editingWorkflow ? '工作流已更新' : '工作流已创建')
+      loadWorkflows()
       
       setIsModalVisible(false)
       setEditingWorkflow(null)
@@ -140,9 +167,24 @@ const WorkflowManagement: React.FC = () => {
     }
   }
 
-  const handleRunNow = (workflow: Workflow) => {
-    message.info(`正在执行工作流: ${workflow.name}`)
-    // 这里会调用后端API立即执行工作流
+  const handleRunNow = async (workflow: Workflow) => {
+    try {
+      message.loading({ content: `正在执行工作流: ${workflow.name}`, key: 'run' })
+      const resp = await fetch(`${getApiBaseUrl()}/workflows/${workflow.id}/execute`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error({ content: data?.message || '执行工作流失败', key: 'run' })
+        return
+      }
+      message.success({ content: '工作流已开始执行', key: 'run' })
+      loadWorkflows()
+    } catch (e) {
+      console.error(e)
+      message.error({ content: '执行工作流失败', key: 'run' })
+    }
   }
 
   const columns = [

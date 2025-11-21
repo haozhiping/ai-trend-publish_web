@@ -23,6 +23,7 @@ import {
   WeiboCircleOutlined,
   WechatOutlined
 } from '@ant-design/icons'
+import { getApiBaseUrl } from '../utils/api'
 
 const { Title, Text } = Typography
 
@@ -45,27 +46,44 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setError('')
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      if (values.username === 'admin' && values.password === 'admin123') {
-        const userInfo = {
-          id: '1',
-          username: values.username,
-          email: 'admin@example.com',
-          name: '系统管理员',
-          avatar: null,
-          role: 'admin',
-          permissions: ['*']
-        }
-        
-        localStorage.setItem('userInfo', JSON.stringify(userInfo))
-        localStorage.setItem('token', 'mock-jwt-token')
-        onLogin(userInfo)
-      } else {
-        setError('用户名或密码错误')
+      if (loginType !== 'account') {
+        setError('当前仅支持账号密码登录')
+        return
       }
+
+      const resp = await fetch(`${getApiBaseUrl()}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+          loginType: 'account'
+        })
+      })
+
+      const data = await resp.json()
+
+      if (!resp.ok || data.code !== 200) {
+        setError(data?.message || '用户名或密码错误')
+        return
+      }
+
+      const userInfo = data.data?.user || {}
+      const token = data.data?.token
+
+      if (!token) {
+        setError('登录失败：后端未返回 token')
+        return
+      }
+
+      localStorage.setItem('userInfo', JSON.stringify(userInfo))
+      localStorage.setItem('token', token)
+      onLogin(userInfo)
     } catch (err) {
-      setError('登录失败，请重试')
+      console.error(err)
+      setError('登录失败，请检查后端服务是否已启动')
     } finally {
       setLoading(false)
     }
