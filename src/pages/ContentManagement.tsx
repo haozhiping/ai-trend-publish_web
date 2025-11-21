@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Table, 
@@ -23,65 +23,28 @@ import {
   DownloadOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Search } = Input
 const { Option } = Select
 const { RangePicker } = DatePicker
 
 interface ContentItem {
-  id: string
+  id: number
   title: string
   content: string
   url: string
   source: string
   platform: string
   publishDate: string
-  score: number
+  score: number | null
   status: 'published' | 'draft' | 'failed'
   keywords: string[]
   media?: string[]
 }
 
 const ContentManagement: React.FC = () => {
-  const [contents, setContents] = useState<ContentItem[]>([
-    {
-      id: '1',
-      title: 'DeepSeek-R1 登顶AI模型排行榜',
-      content: 'DeepSeek-R1在最新的AI模型评测中表现出色...',
-      url: 'https://example.com/deepseek-r1',
-      source: 'twitter',
-      platform: 'weixin',
-      publishDate: '2024-01-15 14:30:00',
-      score: 95.5,
-      status: 'published',
-      keywords: ['AI', 'DeepSeek', '排行榜'],
-      media: ['https://example.com/image1.jpg']
-    },
-    {
-      id: '2',
-      title: 'OpenAI发布新版本GPT模型',
-      content: 'OpenAI今日宣布发布新版本的GPT模型...',
-      url: 'https://example.com/openai-gpt',
-      source: 'firecrawl',
-      platform: 'weixin',
-      publishDate: '2024-01-15 12:15:00',
-      score: 88.2,
-      status: 'published',
-      keywords: ['OpenAI', 'GPT', '新版本']
-    },
-    {
-      id: '3',
-      title: 'GitHub热门AI项目推荐',
-      content: '本周GitHub上最受欢迎的AI项目包括...',
-      url: 'https://example.com/github-ai',
-      source: 'hellogithub',
-      platform: 'weixin',
-      publishDate: '2024-01-15 10:45:00',
-      score: 82.7,
-      status: 'draft',
-      keywords: ['GitHub', 'AI项目', '开源']
-    }
-  ])
+  const [contents, setContents] = useState<ContentItem[]>([])
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
@@ -92,17 +55,58 @@ const ContentManagement: React.FC = () => {
     dateRange: null as any
   })
 
+  // 加载内容列表
+  const loadContents = async () => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/content`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '加载内容失败')
+        return
+      }
+      setContents(data.data || [])
+    } catch (e) {
+      console.error(e)
+      message.error('加载内容失败，请检查后端服务')
+    }
+  }
+
+  useEffect(() => {
+    loadContents()
+  }, [])
+
   const handlePreview = (content: ContentItem) => {
     setPreviewContent(content)
     setPreviewVisible(true)
   }
 
-  const handleDelete = (id: string) => {
-    setContents(prev => prev.filter(item => item.id !== id))
+  const handleDelete = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/content/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '删除内容失败')
+        return
+      }
+      message.success('内容已删除')
+      loadContents()
+    } catch (e) {
+      console.error(e)
+      message.error('删除内容失败')
+    }
   }
 
-  const handleBatchDelete = () => {
-    setContents(prev => prev.filter(item => !selectedRowKeys.includes(item.id)))
+  const handleBatchDelete = async () => {
+    const ids = selectedRowKeys as unknown as number[]
+    for (const id of ids) {
+      await handleDelete(id)
+    }
     setSelectedRowKeys([])
   }
 

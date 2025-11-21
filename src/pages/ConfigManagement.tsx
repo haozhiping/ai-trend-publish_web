@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { 
   Card, 
   Form, 
@@ -14,6 +14,7 @@ import {
   Divider
 } from 'antd'
 import { SaveOutlined, ReloadOutlined, EyeInvisibleOutlined, EyeOutlined, GithubOutlined } from '@ant-design/icons'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -22,7 +23,35 @@ const { TabPane } = Tabs
 const ConfigManagement: React.FC = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
+  const [loadingConfig, setLoadingConfig] = useState(true)
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
+
+  // 加载配置
+  const loadConfig = async () => {
+    try {
+      setLoadingConfig(true)
+      const resp = await fetch(`${getApiBaseUrl()}/config`, {
+        method: 'GET',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '加载配置失败')
+        return
+      }
+      // 设置表单值
+      form.setFieldsValue(data.data || {})
+    } catch (e) {
+      console.error(e)
+      message.error('加载配置失败，请检查后端服务')
+    } finally {
+      setLoadingConfig(false)
+    }
+  }
+
+  useEffect(() => {
+    loadConfig()
+  }, [])
 
   const toggleSecretVisibility = (field: string) => {
     setShowSecrets(prev => ({
@@ -35,9 +64,19 @@ const ConfigManagement: React.FC = () => {
     try {
       setLoading(true)
       const values = await form.validateFields()
-      console.log('保存配置:', values)
-      // 这里会调用后端API保存配置
-      message.success('配置已保存')
+      
+      // 调用后端API保存配置
+      const resp = await fetch(`${getApiBaseUrl()}/config`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ configs: values })
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '保存配置失败')
+        return
+      }
+      message.success('配置已保存（需要重启系统才能生效）')
     } catch (error) {
       console.error('保存配置失败:', error)
       message.error('保存配置失败')
@@ -46,9 +85,9 @@ const ConfigManagement: React.FC = () => {
     }
   }
 
-  const handleReset = () => {
-    form.resetFields()
-    message.info('配置已重置')
+  const handleReset = async () => {
+    await loadConfig()
+    message.info('配置已重置为服务器当前值')
   }
 
   const SecretInput: React.FC<{ field: string; placeholder: string }> = ({ field, placeholder }) => (
@@ -96,6 +135,11 @@ const ConfigManagement: React.FC = () => {
           }
         />
 
+        {loadingConfig ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <span>加载配置中...</span>
+          </div>
+        ) : (
         <Form
           form={form}
           layout="vertical"
@@ -296,6 +340,7 @@ const ConfigManagement: React.FC = () => {
             </TabPane>
           </Tabs>
         </Form>
+        )}
       </Card>
     </div>
   )
