@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Table, 
@@ -21,63 +21,24 @@ import {
   SyncOutlined,
   LinkOutlined
 } from '@ant-design/icons'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
 
 interface DataSource {
-  id: string
+  id: number
   name: string
   type: 'firecrawl' | 'twitter' | 'custom'
   url: string
   enabled: boolean
-  lastSync: string
+  lastSyncAt?: string | null
   status: 'active' | 'error' | 'inactive'
-  description: string
+  description?: string
 }
 
 const DataSources: React.FC = () => {
-  const [dataSources, setDataSources] = useState<DataSource[]>([
-    {
-      id: '1',
-      name: 'Hacker News',
-      type: 'firecrawl',
-      url: 'https://news.ycombinator.com/',
-      enabled: true,
-      lastSync: '2024-01-15 14:30:00',
-      status: 'active',
-      description: '技术新闻和讨论'
-    },
-    {
-      id: '2',
-      name: 'Reuters AI News',
-      type: 'firecrawl',
-      url: 'https://www.reuters.com/technology/artificial-intelligence/',
-      enabled: true,
-      lastSync: '2024-01-15 14:25:00',
-      status: 'active',
-      description: '路透社AI新闻'
-    },
-    {
-      id: '3',
-      name: 'OpenAI Twitter',
-      type: 'twitter',
-      url: 'https://x.com/OpenAI',
-      enabled: true,
-      lastSync: '2024-01-15 14:20:00',
-      status: 'active',
-      description: 'OpenAI官方Twitter账号'
-    },
-    {
-      id: '4',
-      name: 'DeepSeek Twitter',
-      type: 'twitter',
-      url: 'https://x.com/deepseek_ai',
-      enabled: false,
-      lastSync: '2024-01-14 10:15:00',
-      status: 'inactive',
-      description: 'DeepSeek官方Twitter账号'
-    }
-  ])
+  const [dataSources, setDataSources] = useState<DataSource[]>([])
+  const [loading, setLoading] = useState(false)
 
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingSource, setEditingSource] = useState<DataSource | null>(null)
@@ -89,76 +50,136 @@ const DataSources: React.FC = () => {
     { value: 'custom', label: '自定义API', icon: '⚙️' }
   ]
 
+  const fetchDataSources = async () => {
+    try {
+      setLoading(true)
+      const resp = await fetch(`${getApiBaseUrl()}/datasources`, {
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '获取数据源失败')
+        return
+      }
+      setDataSources(data.data || [])
+    } catch (error) {
+      console.error(error)
+      message.error('获取数据源失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDataSources()
+  }, [])
+
   const handleEdit = (source: DataSource) => {
     setEditingSource(source)
     form.setFieldsValue(source)
     setIsModalVisible(true)
   }
 
-  const handleDelete = (id: string) => {
-    setDataSources(prev => prev.filter(source => source.id !== id))
-    message.success('数据源已删除')
+  const handleDelete = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/datasources/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '删除数据源失败')
+        return
+      }
+      message.success('数据源已删除')
+      fetchDataSources()
+    } catch (error) {
+      console.error(error)
+      message.error('删除数据源失败')
+    }
   }
 
-  const handleToggleEnabled = (id: string, enabled: boolean) => {
-    setDataSources(prev => prev.map(source =>
-      source.id === id
-        ? { ...source, enabled, status: enabled ? 'active' : 'inactive' }
-        : source
-    ))
-    message.success(`数据源已${enabled ? '启用' : '禁用'}`)
+  const handleToggleEnabled = async (id: number, enabled: boolean) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/datasources/${id}/toggle`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ enabled })
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '更新状态失败')
+        return
+      }
+      message.success(`数据源已${enabled ? '启用' : '禁用'}`)
+      fetchDataSources()
+    } catch (error) {
+      console.error(error)
+      message.error('更新状态失败')
+    }
   }
 
   const handleTest = async (source: DataSource) => {
     message.loading({ content: '正在测试连接...', key: 'test' })
-    
-    // 模拟测试
-    setTimeout(() => {
-      const success = Math.random() > 0.3
-      if (success) {
-        message.success({ content: '连接测试成功', key: 'test' })
-        setDataSources(prev => prev.map(s =>
-          s.id === source.id ? { ...s, status: 'active' } : s
-        ))
-      } else {
-        message.error({ content: '连接测试失败', key: 'test' })
-        setDataSources(prev => prev.map(s =>
-          s.id === source.id ? { ...s, status: 'error' } : s
-        ))
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/datasources/${source.id}/test`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({})
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error({ content: data?.message || '连接测试失败', key: 'test' })
+        return
       }
-    }, 2000)
+      message.success({ content: '连接测试成功', key: 'test' })
+      fetchDataSources()
+    } catch (error) {
+      console.error(error)
+      message.error({ content: '连接测试失败', key: 'test' })
+    }
   }
 
-  const handleSync = (source: DataSource) => {
-    message.info(`正在同步数据源: ${source.name}`)
-    setDataSources(prev => prev.map(s =>
-      s.id === source.id 
-        ? { ...s, lastSync: new Date().toLocaleString() }
-        : s
-    ))
+  const handleSync = async (source: DataSource) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/datasources/${source.id}/sync`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '同步失败')
+        return
+      }
+      message.success(`已同步数据源: ${source.name}`)
+      fetchDataSources()
+    } catch (error) {
+      console.error(error)
+      message.error('同步失败')
+    }
   }
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
       
-      if (editingSource) {
-        setDataSources(prev => prev.map(source =>
-          source.id === editingSource.id
-            ? { ...source, ...values }
-            : source
-        ))
-        message.success('数据源已更新')
-      } else {
-        const newSource: DataSource = {
-          id: Date.now().toString(),
-          ...values,
-          lastSync: '-',
-          status: 'inactive'
-        }
-        setDataSources(prev => [...prev, newSource])
-        message.success('数据源已创建')
+      const method = editingSource ? 'PUT' : 'POST'
+      const url = editingSource
+        ? `${getApiBaseUrl()}/datasources/${editingSource.id}`
+        : `${getApiBaseUrl()}/datasources`
+
+      const resp = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(values)
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '保存数据源失败')
+        return
       }
+      message.success(editingSource ? '数据源已更新' : '数据源已创建')
+      fetchDataSources()
       
       setIsModalVisible(false)
       setEditingSource(null)
@@ -209,13 +230,17 @@ const DataSources: React.FC = () => {
       title: 'URL',
       dataIndex: 'url',
       key: 'url',
-      render: (url: string) => (
-        <Tooltip title={url}>
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            <LinkOutlined /> {url.length > 40 ? `${url.substring(0, 40)}...` : url}
-          </a>
-        </Tooltip>
-      )
+      render: (url?: string | null) => {
+        if (!url) return '-'
+        const short = url.length > 40 ? `${url.substring(0, 40)}...` : url
+        return (
+          <Tooltip title={url}>
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <LinkOutlined /> {short}
+            </a>
+          </Tooltip>
+        )
+      }
     },
     {
       title: '状态',
@@ -236,8 +261,9 @@ const DataSources: React.FC = () => {
     },
     {
       title: '最后同步',
-      dataIndex: 'lastSync',
-      key: 'lastSync'
+      dataIndex: 'lastSyncAt',
+      key: 'lastSyncAt',
+      render: (value: string | null) => value || '-'
     },
     {
       title: '操作',
@@ -307,6 +333,7 @@ const DataSources: React.FC = () => {
           columns={columns}
           dataSource={dataSources}
           rowKey="id"
+          loading={loading}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,

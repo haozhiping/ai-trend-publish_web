@@ -13,7 +13,7 @@ import {
   Alert,
   Divider
 } from 'antd'
-import { SaveOutlined, ReloadOutlined, EyeInvisibleOutlined, EyeOutlined, GithubOutlined } from '@ant-design/icons'
+import { SaveOutlined, ReloadOutlined, GithubOutlined } from '@ant-design/icons'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
@@ -24,7 +24,6 @@ const ConfigManagement: React.FC = () => {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(true)
-  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
 
   // 加载配置
   const loadConfig = async () => {
@@ -52,13 +51,6 @@ const ConfigManagement: React.FC = () => {
   useEffect(() => {
     loadConfig()
   }, [])
-
-  const toggleSecretVisibility = (field: string) => {
-    setShowSecrets(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }))
-  }
 
   const handleSave = async () => {
     try {
@@ -89,21 +81,6 @@ const ConfigManagement: React.FC = () => {
     await loadConfig()
     message.info('配置已重置为服务器当前值')
   }
-
-  const SecretInput: React.FC<{ field: string; placeholder: string }> = ({ field, placeholder }) => (
-    <Input
-      placeholder={placeholder}
-      type={showSecrets[field] ? 'text' : 'password'}
-      suffix={
-        <Button
-          type="text"
-          size="small"
-          icon={showSecrets[field] ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-          onClick={() => toggleSecretVisibility(field)}
-        />
-      }
-    />
-  )
 
   return (
     <div>
@@ -204,7 +181,7 @@ const ConfigManagement: React.FC = () => {
                 <Input placeholder="https://api.openai.com/v1" />
               </Form.Item>
               <Form.Item name="OPENAI_API_KEY" label="OpenAI API密钥">
-                <SecretInput field="OPENAI_API_KEY" placeholder="sk-..." />
+                <Input placeholder="sk-..." />
               </Form.Item>
               <Form.Item name="OPENAI_MODEL" label="OpenAI模型">
                 <Input placeholder="gpt-3.5-turbo" />
@@ -215,7 +192,7 @@ const ConfigManagement: React.FC = () => {
                 <Input placeholder="https://api.deepseek.com/v1" />
               </Form.Item>
               <Form.Item name="DEEPSEEK_API_KEY" label="DeepSeek API密钥">
-                <SecretInput field="DEEPSEEK_API_KEY" placeholder="sk-..." />
+                <Input placeholder="sk-..." />
               </Form.Item>
               <Form.Item name="DEEPSEEK_MODEL" label="DeepSeek模型">
                 <Input placeholder="deepseek-chat|deepseek-reasoner" />
@@ -226,7 +203,7 @@ const ConfigManagement: React.FC = () => {
                 <Input placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1" />
               </Form.Item>
               <Form.Item name="QWEN_API_KEY" label="千问 API密钥">
-                <SecretInput field="QWEN_API_KEY" placeholder="sk-..." />
+                <Input placeholder="sk-..." />
               </Form.Item>
               <Form.Item name="QWEN_MODEL" label="千问模型">
                 <Input placeholder="qwen-max" />
@@ -234,7 +211,7 @@ const ConfigManagement: React.FC = () => {
 
               <Divider orientation="left">讯飞星火 配置</Divider>
               <Form.Item name="XUNFEI_API_KEY" label="讯飞 API密钥">
-                <SecretInput field="XUNFEI_API_KEY" placeholder="..." />
+                <Input placeholder="..." />
               </Form.Item>
             </TabPane>
 
@@ -281,7 +258,7 @@ const ConfigManagement: React.FC = () => {
               </Form.Item>
 
               <Form.Item name="WEIXIN_APP_SECRET" label="微信公众号AppSecret">
-                <SecretInput field="WEIXIN_APP_SECRET" placeholder="..." />
+                <Input placeholder="..." />
               </Form.Item>
 
               <Form.Item name="AUTHOR" label="作者名称">
@@ -299,15 +276,15 @@ const ConfigManagement: React.FC = () => {
 
             <TabPane tab="数据源配置" key="datasource">
               <Form.Item name="FIRE_CRAWL_API_KEY" label="FireCrawl API密钥">
-                <SecretInput field="FIRE_CRAWL_API_KEY" placeholder="fc-..." />
+                <Input placeholder="fc-..." />
               </Form.Item>
 
               <Form.Item name="X_API_BEARER_TOKEN" label="Twitter API Token">
-                <SecretInput field="X_API_BEARER_TOKEN" placeholder="..." />
+                <Input placeholder="..." />
               </Form.Item>
 
               <Form.Item name="DASHSCOPE_API_KEY" label="阿里云API密钥">
-                <SecretInput field="DASHSCOPE_API_KEY" placeholder="sk-..." />
+                <Input placeholder="sk-..." />
               </Form.Item>
             </TabPane>
 
@@ -329,7 +306,7 @@ const ConfigManagement: React.FC = () => {
               </Form.Item>
 
               <Form.Item name="DB_PASSWORD" label="数据库密码">
-                <SecretInput field="DB_PASSWORD" placeholder="..." />
+                <Input placeholder="..." />
               </Form.Item>
 
               <Form.Item name="DB_DATABASE" label="数据库名称">

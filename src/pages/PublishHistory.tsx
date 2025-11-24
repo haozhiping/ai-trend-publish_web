@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Table, 
@@ -10,122 +10,106 @@ import {
   Select,
   Input,
   Tooltip,
-  Progress
+  Progress,
+  message
 } from 'antd'
 import { 
   EyeOutlined, 
   LinkOutlined, 
   ReloadOutlined,
-  ExportOutlined,
-  SearchOutlined,
   DownloadOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { RangePicker } = DatePicker
 const { Option } = Select
 const { Search } = Input
 
 interface PublishRecord {
-  id: string
+  id: number
   title: string
   platform: string
-  status: 'published' | 'failed' | 'pending'
+  status: 'published' | 'failed' | 'pending' | string
   publishTime: string
   url?: string
   articleCount: number
   successCount: number
-  workflow: string
-  error?: string
+  failCount?: number
+  workflowType?: string
+  errorMessage?: string
+  metadata?: any
 }
 
 const PublishHistory: React.FC = () => {
-  const [records, setRecords] = useState<PublishRecord[]>([
-    {
-      id: '1',
-      title: '2024-01-15 AI速递 | DeepSeek-R1登顶排行榜',
-      platform: 'weixin',
-      status: 'published',
-      publishTime: '2024-01-15 14:30:00',
-      url: 'https://mp.weixin.qq.com/s/example1',
-      articleCount: 8,
-      successCount: 8,
-      workflow: 'WeixinWorkflow'
-    },
-    {
-      id: '2',
-      title: 'AI模型性能榜单 - 2024年第3周',
-      platform: 'weixin',
-      status: 'published',
-      publishTime: '2024-01-14 03:00:00',
-      url: 'https://mp.weixin.qq.com/s/example2',
-      articleCount: 1,
-      successCount: 1,
-      workflow: 'WeixinAIBenchWorkflow'
-    },
-    {
-      id: '3',
-      title: 'GitHub热门AI项目精选',
-      platform: 'weixin',
-      status: 'published',
-      publishTime: '2024-01-10 03:00:00',
-      url: 'https://mp.weixin.qq.com/s/example3',
-      articleCount: 5,
-      successCount: 5,
-      workflow: 'WeixinHelloGithubWorkflow'
-    },
-    {
-      id: '4',
-      title: '2024-01-09 AI速递',
-      platform: 'weixin',
-      status: 'failed',
-      publishTime: '2024-01-09 03:00:00',
-      articleCount: 10,
-      successCount: 0,
-      workflow: 'WeixinWorkflow',
-      error: 'API额度不足'
-    },
-    {
-      id: '5',
-      title: '2024-01-08 AI速递',
-      platform: 'weixin',
-      status: 'pending',
-      publishTime: '2024-01-08 03:00:00',
-      articleCount: 12,
-      successCount: 0,
-      workflow: 'WeixinWorkflow'
-    }
-  ])
-
+  const [records, setRecords] = useState<PublishRecord[]>([])
+  const [loading, setLoading] = useState(false)
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewRecord, setPreviewRecord] = useState<PublishRecord | null>(null)
   const [filters, setFilters] = useState({
+    keyword: '',
     platform: '',
     status: '',
-    workflow: '',
+    workflowType: '',
     dateRange: null as any
   })
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 })
+
+  const fetchRecords = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams()
+      if (filters.keyword) params.append('keyword', filters.keyword)
+      if (filters.platform) params.append('platform', filters.platform)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.workflowType) params.append('workflowType', filters.workflowType)
+      if (filters.dateRange && filters.dateRange.length === 2) {
+        params.append('startTime', filters.dateRange[0].startOf('day').toISOString())
+        params.append('endTime', filters.dateRange[1].endOf('day').toISOString())
+      }
+      params.append('page', String(pagination.page))
+      params.append('pageSize', String(pagination.pageSize))
+
+      const resp = await fetch(`${getApiBaseUrl()}/publish-history?${params.toString()}`, {
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '获取发布记录失败')
+        return
+      }
+      setRecords(data.data.items || [])
+      setPagination(prev => ({ ...prev, total: data.data.total || 0 }))
+    } catch (error) {
+      console.error(error)
+      message.error('获取发布记录失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchRecords()
+  }, [filters, pagination.page, pagination.pageSize])
 
   const handlePreview = (record: PublishRecord) => {
     setPreviewRecord(record)
     setPreviewVisible(true)
   }
 
-  const handleRetry = (id: string) => {
-    setRecords(prev => prev.map(record =>
-      record.id === id
-        ? { ...record, status: 'pending' as const }
-        : record
-    ))
+  const handleRetry = () => {
+    message.info('已触发重试请求（即将支持）')
   }
 
   const getStatusTag = (status: string) => {
     const statusConfig = {
       published: { color: 'success', text: '已发布' },
       failed: { color: 'error', text: '失败' },
-      pending: { color: 'processing', text: '处理中' }
+      pending: { color: 'processing', text: '处理中' },
+      draft: { color: 'default', text: '草稿' }
     }
     const config = statusConfig[status as keyof typeof statusConfig]
+      || { color: 'default', text: status }
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
@@ -137,13 +121,15 @@ const PublishHistory: React.FC = () => {
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
-  const getWorkflowTag = (workflow: string) => {
+  const getWorkflowTag = (workflow?: string) => {
     const workflowConfig = {
-      WeixinWorkflow: { color: 'blue', text: '微信文章工作流' },
-      WeixinAIBenchWorkflow: { color: 'purple', text: 'AI排行榜' },
-      WeixinHelloGithubWorkflow: { color: 'orange', text: 'GitHub项目' }
+      'weixin-article-workflow': { color: 'blue', text: '微信文章工作流' },
+      'weixin-aibench-workflow': { color: 'purple', text: 'AI排行榜' },
+      'weixin-hellogithub-workflow': { color: 'orange', text: 'GitHub项目' }
     }
-    const config = workflowConfig[workflow as keyof typeof workflowConfig] || { color: 'default', text: workflow }
+    const config = workflow
+      ? workflowConfig[workflow as keyof typeof workflowConfig] || { color: 'default', text: workflow }
+      : { color: 'default', text: '未分类' }
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
@@ -157,7 +143,7 @@ const PublishHistory: React.FC = () => {
         <div>
           <div style={{ fontWeight: 500, marginBottom: 4 }}>{text}</div>
           <div style={{ fontSize: 12, color: '#666' }}>
-            {getWorkflowTag(record.workflow)}
+            {getWorkflowTag(record.workflowType)}
           </div>
         </div>
       )
@@ -200,7 +186,7 @@ const PublishHistory: React.FC = () => {
       title: '发布时间',
       dataIndex: 'publishTime',
       key: 'publishTime',
-      width: 150,
+      width: 170,
       sorter: (a: PublishRecord, b: PublishRecord) => 
         dayjs(a.publishTime).unix() - dayjs(b.publishTime).unix()
     },
@@ -217,7 +203,7 @@ const PublishHistory: React.FC = () => {
               onClick={() => handlePreview(record)}
             />
           </Tooltip>
-          {record.url && (
+          {record.url && record.status === 'published' && (
             <Tooltip title="查看文章">
               <Button
                 size="small"
@@ -231,7 +217,7 @@ const PublishHistory: React.FC = () => {
               <Button
                 size="small"
                 icon={<ReloadOutlined />}
-                onClick={() => handleRetry(record.id)}
+                onClick={handleRetry}
               />
             </Tooltip>
           )}
@@ -248,6 +234,7 @@ const PublishHistory: React.FC = () => {
           <Button 
             icon={<DownloadOutlined />}
             type="default"
+            onClick={() => message.info('请使用系统日志导出功能（待实现）')}
           >
             导出记录
           </Button>
@@ -258,13 +245,19 @@ const PublishHistory: React.FC = () => {
             <Search
               placeholder="搜索标题"
               style={{ width: 200 }}
-              onSearch={(value) => console.log('搜索:', value)}
+              onSearch={(value) => {
+                setFilters(prev => ({ ...prev, keyword: value }))
+                setPagination(prev => ({ ...prev, page: 1 }))
+              }}
             />
             <Select
               placeholder="选择平台"
               style={{ width: 120 }}
               allowClear
-              onChange={(value) => setFilters(prev => ({ ...prev, platform: value || '' }))}
+              onChange={(value) => {
+                setFilters(prev => ({ ...prev, platform: value || '' }))
+                setPagination(prev => ({ ...prev, page: 1 }))
+              }}
             >
               <Option value="weixin">微信公众号</Option>
             </Select>
@@ -272,25 +265,35 @@ const PublishHistory: React.FC = () => {
               placeholder="选择状态"
               style={{ width: 120 }}
               allowClear
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value || '' }))}
+              onChange={(value) => {
+                setFilters(prev => ({ ...prev, status: value || '' }))
+                setPagination(prev => ({ ...prev, page: 1 }))
+              }}
             >
               <Option value="published">已发布</Option>
               <Option value="failed">失败</Option>
               <Option value="pending">处理中</Option>
+              <Option value="draft">草稿</Option>
             </Select>
             <Select
               placeholder="选择工作流"
-              style={{ width: 150 }}
+              style={{ width: 180 }}
               allowClear
-              onChange={(value) => setFilters(prev => ({ ...prev, workflow: value || '' }))}
+              onChange={(value) => {
+                setFilters(prev => ({ ...prev, workflowType: value || '' }))
+                setPagination(prev => ({ ...prev, page: 1 }))
+              }}
             >
-              <Option value="WeixinWorkflow">微信文章工作流</Option>
-              <Option value="WeixinAIBenchWorkflow">AI排行榜</Option>
-              <Option value="WeixinHelloGithubWorkflow">GitHub项目</Option>
+              <Option value="weixin-article-workflow">微信文章工作流</Option>
+              <Option value="weixin-aibench-workflow">AI排行榜</Option>
+              <Option value="weixin-hellogithub-workflow">GitHub项目</Option>
             </Select>
             <RangePicker
               placeholder={['开始日期', '结束日期']}
-              onChange={(dates) => setFilters(prev => ({ ...prev, dateRange: dates }))}
+              onChange={(dates) => {
+                setFilters(prev => ({ ...prev, dateRange: dates }))
+                setPagination(prev => ({ ...prev, page: 1 }))
+              }}
             />
           </Space>
         </div>
@@ -299,12 +302,15 @@ const PublishHistory: React.FC = () => {
           columns={columns}
           dataSource={records}
           rowKey="id"
+          loading={loading}
           pagination={{
-            total: records.length,
-            pageSize: 10,
+            total: pagination.total,
+            current: pagination.page,
+            pageSize: pagination.pageSize,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`
+            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            onChange: (page, pageSize) => setPagination({ ...pagination, page, pageSize })
           }}
         />
       </Card>
@@ -323,7 +329,7 @@ const PublishHistory: React.FC = () => {
               <Space>
                 {getPlatformTag(previewRecord.platform)}
                 {getStatusTag(previewRecord.status)}
-                {getWorkflowTag(previewRecord.workflow)}
+                {getWorkflowTag(previewRecord.workflowType)}
               </Space>
             </div>
 
@@ -336,13 +342,15 @@ const PublishHistory: React.FC = () => {
               <strong>文章统计：</strong>
               <div style={{ marginTop: 8 }}>
                 <Progress 
-                  percent={previewRecord.articleCount > 0 ? (previewRecord.successCount / previewRecord.articleCount) * 100 : 0}
+                  percent={previewRecord.articleCount > 0
+                    ? (previewRecord.successCount / previewRecord.articleCount) * 100
+                    : 0}
                   format={() => `${previewRecord.successCount}/${previewRecord.articleCount}`}
                 />
               </div>
             </div>
 
-            {previewRecord.url && (
+            {previewRecord.status === 'published' && previewRecord.url && (
               <div style={{ marginBottom: 16 }}>
                 <strong>文章链接：</strong>
                 <div style={{ marginTop: 8 }}>
@@ -353,7 +361,19 @@ const PublishHistory: React.FC = () => {
               </div>
             )}
 
-            {previewRecord.error && (
+            {previewRecord.metadata?.publishId && (
+              <div style={{ marginBottom: 16 }}>
+                <strong>草稿 ID：</strong>
+                <div style={{ marginTop: 8 }}>
+                  <Tag color="purple">{previewRecord.metadata.publishId}</Tag>
+                  <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                    在「公众号后台 → 内容制作 → 草稿箱」搜索该 ID 即可找到对应草稿。
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {previewRecord.errorMessage && (
               <div style={{ marginBottom: 16 }}>
                 <strong>错误信息：</strong>
                 <div style={{ 
@@ -364,7 +384,7 @@ const PublishHistory: React.FC = () => {
                   borderRadius: 4,
                   color: '#ff4d4f'
                 }}>
-                  {previewRecord.error}
+                  {previewRecord.errorMessage}
                 </div>
               </div>
             )}
@@ -381,13 +401,11 @@ const PublishHistory: React.FC = () => {
                 maxHeight: 200,
                 overflow: 'auto'
               }}>
-                <div>2024-01-15 14:30:00 - 开始执行工作流</div>
-                <div>2024-01-15 14:30:05 - 抓取数据源完成，获取到 15 条内容</div>
-                <div>2024-01-15 14:30:10 - 内容排序完成</div>
-                <div>2024-01-15 14:30:15 - 内容摘要生成完成</div>
-                <div>2024-01-15 14:30:20 - 模板渲染完成</div>
-                <div>2024-01-15 14:30:25 - 发布到微信公众号成功</div>
-                <div>2024-01-15 14:30:30 - 工作流执行完成</div>
+                {previewRecord.metadata?.logs?.length
+                  ? previewRecord.metadata.logs.map((log: string, idx: number) => (
+                      <div key={idx}>{log}</div>
+                    ))
+                  : <div>暂无日志</div>}
               </div>
             </div>
           </div>

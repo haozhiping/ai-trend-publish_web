@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Row, 
@@ -22,68 +22,25 @@ import {
   StarOutlined
 } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
 const { TextArea } = Input
 
 interface Template {
-  id: string
+  id: number
   name: string
   type: 'article' | 'aibench' | 'hellogithub'
-  description: string
-  preview: string
+  description?: string
+  previewUrl?: string
   content: string
-  isDefault: boolean
+  isDefault?: boolean
+  platform?: string
 }
 
 const TemplateManagement: React.FC = () => {
-  const [templates, setTemplates] = useState<Template[]>([
-    {
-      id: '1',
-      name: '默认文章模板',
-      type: 'article',
-      description: '简洁大方的文章模板，适合各类内容',
-      preview: 'https://oss.liuyaowen.cn/images/202503051143589.png',
-      content: '<div>默认模板内容...</div>',
-      isDefault: true
-    },
-    {
-      id: '2',
-      name: '现代风格模板',
-      type: 'article',
-      description: '时尚现代的设计风格，适合科技类文章',
-      preview: 'https://oss.liuyaowen.cn/images/202503051144321.png',
-      content: '<div>现代模板内容...</div>',
-      isDefault: false
-    },
-    {
-      id: '3',
-      name: '技术专栏模板',
-      type: 'article',
-      description: '专为技术文章定制的排版样式',
-      preview: 'https://oss.liuyaowen.cn/images/202503051144824.png',
-      content: '<div>技术模板内容...</div>',
-      isDefault: false
-    },
-    {
-      id: '4',
-      name: 'AI排行榜模板',
-      type: 'aibench',
-      description: '大模型性能排行榜展示模板',
-      preview: 'https://oss.liuyaowen.cn/images/202503081200663.png',
-      content: '<div>排行榜模板内容...</div>',
-      isDefault: true
-    },
-    {
-      id: '5',
-      name: 'GitHub项目模板',
-      type: 'hellogithub',
-      description: 'GitHub热门项目展示模板',
-      preview: 'https://oss.liuyaowen.cn/images/202503081200433.png',
-      content: '<div>GitHub模板内容...</div>',
-      isDefault: true
-    }
-  ])
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loading, setLoading] = useState(false)
 
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
@@ -97,6 +54,30 @@ const TemplateManagement: React.FC = () => {
     { value: 'hellogithub', label: 'GitHub项目模板' }
   ]
 
+  const fetchTemplates = async () => {
+    try {
+      setLoading(true)
+      const resp = await fetch(`${getApiBaseUrl()}/templates`, {
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '获取模板失败')
+        return
+      }
+      setTemplates(data.data || [])
+    } catch (error) {
+      console.error(error)
+      message.error('获取模板失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTemplates()
+  }, [])
+
   const handleEdit = (template: Template) => {
     setEditingTemplate(template)
     form.setFieldsValue(template)
@@ -108,31 +89,41 @@ const TemplateManagement: React.FC = () => {
     setIsPreviewVisible(true)
   }
 
-  const handleDelete = (id: string) => {
-    setTemplates(prev => prev.filter(template => template.id !== id))
-    message.success('模板已删除')
+  const handleDelete = async (id: number) => {
+    try {
+      await fetch(`${getApiBaseUrl()}/templates/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      message.success('模板已删除')
+      fetchTemplates()
+    } catch (error) {
+      console.error(error)
+      message.error('删除模板失败')
+    }
   }
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
       
-      if (editingTemplate) {
-        setTemplates(prev => prev.map(template =>
-          template.id === editingTemplate.id
-            ? { ...template, ...values }
-            : template
-        ))
-        message.success('模板已更新')
-      } else {
-        const newTemplate: Template = {
-          id: Date.now().toString(),
-          ...values,
-          isDefault: false
-        }
-        setTemplates(prev => [...prev, newTemplate])
-        message.success('模板已创建')
+      const method = editingTemplate ? 'PUT' : 'POST'
+      const url = editingTemplate
+        ? `${getApiBaseUrl()}/templates/${editingTemplate.id}`
+        : `${getApiBaseUrl()}/templates`
+
+      const resp = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(values)
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '保存模板失败')
+        return
       }
+      message.success(editingTemplate ? '模板已更新' : '模板已创建')
+      fetchTemplates()
       
       setIsModalVisible(false)
       setEditingTemplate(null)
@@ -142,23 +133,47 @@ const TemplateManagement: React.FC = () => {
     }
   }
 
-  const handleCopy = (template: Template) => {
-    const newTemplate: Template = {
-      ...template,
-      id: Date.now().toString(),
-      name: `${template.name} - 副本`,
-      isDefault: false
+  const handleCopy = async (template: Template) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/templates`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...template,
+          name: `${template.name} - 副本`,
+          isDefault: false,
+        })
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '复制模板失败')
+        return
+      }
+      message.success('模板已复制')
+      fetchTemplates()
+    } catch (error) {
+      console.error(error)
+      message.error('复制模板失败')
     }
-    setTemplates(prev => [...prev, newTemplate])
-    message.success('模板已复制')
   }
 
-  const handleSetDefault = (id: string, type: string) => {
-    setTemplates(prev => prev.map(template => ({
-      ...template,
-      isDefault: template.id === id && template.type === type
-    })))
-    message.success('已设置为默认模板')
+  const handleSetDefault = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/templates/${id}/default`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '设置默认模板失败')
+        return
+      }
+      message.success('已设置为默认模板')
+      fetchTemplates()
+    } catch (error) {
+      console.error(error)
+      message.error('设置默认模板失败')
+    }
   }
 
   const getTypeTag = (type: string) => {
@@ -183,6 +198,7 @@ const TemplateManagement: React.FC = () => {
     <div>
       <Card
         title="模板管理"
+        loading={loading}
         extra={
           <Button
             type="primary"
@@ -209,9 +225,9 @@ const TemplateManagement: React.FC = () => {
                     hoverable
                     cover={
                       <div style={{ position: 'relative' }}>
-                        <img
-                          alt={template.name}
-                          src={template.preview}
+                    <img
+                      alt={template.name}
+                      src={template.previewUrl}
                           style={{ width: '100%', height: 'auto' }}
                         />
                         {template.isDefault && (
@@ -258,7 +274,7 @@ const TemplateManagement: React.FC = () => {
                         <Button
                           size="small"
                           type="link"
-                          onClick={() => handleSetDefault(template.id, template.type)}
+                          onClick={() => handleSetDefault(template.id)}
                         >
                           设为默认
                         </Button>
@@ -323,7 +339,7 @@ const TemplateManagement: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="preview"
+            name="previewUrl"
             label="预览图URL"
           >
             <Input placeholder="请输入预览图URL" />

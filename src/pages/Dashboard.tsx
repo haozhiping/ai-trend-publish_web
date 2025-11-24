@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   Row, 
   Col, 
   Card, 
-  Statistic, 
   Progress, 
   Alert, 
   Button, 
@@ -17,9 +16,10 @@ import {
   Flex,
   theme,
   Segmented,
-  DatePicker,
   Select,
-  message
+  message,
+  Spin,
+  Empty
 } from 'antd'
 import { 
   ArrowUpOutlined, 
@@ -47,7 +47,9 @@ import {
   MoreOutlined,
   FileProtectOutlined,
   StarOutlined,
-  AreaChartOutlined
+  AreaChartOutlined,
+  InfoCircleOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons'
 import { 
   LineChart, 
@@ -69,34 +71,82 @@ import dayjs from 'dayjs'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Title, Text } = Typography
-const { RangePicker } = DatePicker
 const { Option } = Select
+
+interface AnnouncementBanner {
+  id: string
+  title: string
+  content: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  isSticky: boolean
+  publishTime?: string | null
+}
+
+interface MetricsState {
+  totalArticles: number
+  todayPublished: number
+  successRate: number
+  totalViews: number
+  activeWorkflows: number
+}
+
+interface ChartPoint {
+  name: string
+  articles: number
+  views: number
+}
+
+interface PieDatum {
+  name: string
+  value: number
+  color: string
+}
+
+interface RecentActivity {
+  id: string
+  title: string
+  description: string
+  status: 'success' | 'warning' | 'error' | 'info'
+  time: string
+  module: string
+}
+
+interface ApiQuota {
+  id: number
+  name: string
+  type: string
+  used: number
+  amount: string
+  status: string
+  trend: number
+}
+
+interface SystemResources {
+  cpuUsage: number
+  memoryUsage: number
+  diskUsage: number
+}
+
+interface WorkflowStatus {
+  id: number
+  name: string
+  status: string
+  nextRun?: string | null
+}
+
+interface HealthState {
+  score: number
+  level: string
+  message: string
+}
 
 const Dashboard: React.FC = () => {
   const { token } = theme.useToken()
   const navigate = useNavigate()
   const [timeRange, setTimeRange] = useState<string>('7d')
   const [chartType, setChartType] = useState<string>('area')
-  
-  // 公告数据
-  const [announcements] = useState([
-    {
-      id: '1',
-      title: '系统维护通知',
-      content: '系统将于今晚23:00-01:00进行维护升级，期间可能影响正常使用，请提前做好准备。',
-      type: 'warning',
-      isSticky: true,
-      publishTime: '2024-01-15 10:00:00'
-    },
-    {
-      id: '2',
-      title: '新功能上线公告',
-      content: 'AI内容排序功能已正式上线，支持更智能的内容筛选和排序，欢迎体验使用。',
-      type: 'success',
-      isSticky: false,
-      publishTime: '2024-01-14 09:00:00'
-    }
-  ])
+  const [dashboardLoading, setDashboardLoading] = useState(false)
+  const [announcements, setAnnouncements] = useState<AnnouncementBanner[]>([])
 
   const [systemStatus, setSystemStatus] = useState({
     status: 'running',
@@ -106,76 +156,47 @@ const Dashboard: React.FC = () => {
   })
   const [systemBusy, setSystemBusy] = useState(false)
 
-  const [metrics] = useState({
-    totalArticles: 1247,
-    todayPublished: 12,
-    successRate: 98.5,
-    activeWorkflows: 3,
-    totalViews: 45678,
-    avgResponseTime: 1.2
+  const [metrics, setMetrics] = useState<MetricsState>({
+    totalArticles: 0,
+    todayPublished: 0,
+    successRate: 0,
+    totalViews: 0,
+    activeWorkflows: 0
   })
 
-  const [recentActivities] = useState([
-    {
-      id: 1,
-      time: '14:30',
-      title: '微信文章工作流执行完成',
-      description: '成功发布 8 篇文章到微信公众号',
-      status: 'success',
-      icon: <CheckCircleOutlined />,
-      user: 'System'
-    },
-    {
-      id: 2,
-      time: '12:15',
-      title: 'AI模型排行榜更新',
-      description: 'DeepSeek-R1 登顶本周排行榜',
-      status: 'info',
-      icon: <TrophyOutlined />,
-      user: 'AI Engine'
-    },
-    {
-      id: 3,
-      time: '10:45',
-      title: 'GitHub热门项目抓取',
-      description: '发现 15 个新的AI相关热门项目',
-      status: 'success',
-      icon: <RocketOutlined />,
-      user: 'Crawler'
-    },
-    {
-      id: 4,
-      time: '09:20',
-      title: 'FireCrawl API额度警告',
-      description: '当前额度剩余不足20%，建议及时充值',
-      status: 'warning',
-      icon: <ExclamationCircleOutlined />,
-      user: 'Monitor'
-    }
-  ])
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
+  const [chartData, setChartData] = useState<ChartPoint[]>([])
+  const [pieData, setPieData] = useState<PieDatum[]>([])
+  const [apiQuotas, setApiQuotas] = useState<ApiQuota[]>([])
+  const [systemResources, setSystemResources] = useState<SystemResources>({
+    cpuUsage: 0,
+    memoryUsage: 0,
+    diskUsage: 0
+  })
+  const [workflowStatus, setWorkflowStatus] = useState<WorkflowStatus[]>([])
+  const [healthState, setHealthState] = useState<HealthState>({
+    score: 0,
+    level: '--',
+    message: '等待数据...'
+  })
 
-  const [chartData] = useState([
-    { name: '周一', articles: 8, success: 8, views: 1200, users: 45 },
-    { name: '周二', articles: 12, success: 11, views: 1800, users: 67 },
-    { name: '周三', articles: 15, success: 14, views: 2200, users: 89 },
-    { name: '周四', articles: 10, success: 10, views: 1500, users: 56 },
-    { name: '周五', articles: 18, success: 17, views: 2800, users: 123 },
-    { name: '周六', articles: 14, success: 13, views: 2100, users: 78 },
-    { name: '周日', articles: 16, success: 16, views: 2400, users: 92 }
-  ])
+  const pieColors = useMemo(() => ([
+    token.colorSuccess,
+    token.colorPrimary,
+    token.colorWarning,
+    '#722ed1',
+    '#13c2c2'
+  ]), [token])
 
-  const [pieData] = useState([
-    { name: '微信公众号', value: 65, color: token.colorSuccess },
-    { name: '其他平台', value: 25, color: token.colorPrimary },
-    { name: '草稿箱', value: 10, color: token.colorWarning }
-  ])
-
-  const [apiQuotas] = useState([
-    { name: 'DeepSeek API', used: 75, total: 100, color: token.colorSuccess, amount: '¥45.60', trend: -5 },
-    { name: 'FireCrawl API', used: 85, total: 100, color: token.colorWarning, amount: '150 次', trend: 12 },
-    { name: 'Twitter API', used: 40, total: 100, color: token.colorPrimary, amount: '3000 次', trend: -2 },
-    { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90', trend: 8 }
-  ])
+  const platformNameMap: Record<string, string> = {
+    weixin: '微信公众号',
+    wechat: '微信公众号',
+    draft: '草稿',
+    weibo: '微博',
+    douyin: '抖音',
+    bilibili: '哔哩哔哩',
+    unknown: '其他'
+  }
 
   const loadSystemStatus = async () => {
     try {
@@ -195,6 +216,134 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     loadSystemStatus()
   }, [])
+
+  const rangeMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90 }
+
+  const loadDashboard = async (rangeKey: string) => {
+    const days = rangeMap[rangeKey] ?? 7
+    setDashboardLoading(true)
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/dashboard/overview?rangeDays=${days}`, {
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        throw new Error(data?.message || '获取仪表盘数据失败')
+      }
+      const payload = data.data
+      setMetrics(payload.metrics || {
+        totalArticles: 0, todayPublished: 0, successRate: 0, totalViews: 0, activeWorkflows: 0
+      })
+      setChartData((payload.chart?.points || []).map((point: any) => ({
+        name: point.name,
+        articles: point.articles ?? 0,
+        views: point.views ?? 0
+      })))
+      const distribution = payload.platformDistribution || []
+      setPieData(distribution.map((item: any, index: number) => ({
+        name: platformNameMap[item.platform] || item.name || '其他',
+        value: Number(item.value ?? 0),
+        color: pieColors[index % pieColors.length]
+      })))
+      setRecentActivities((payload.recentActivities || []).map((item: any) => ({
+        id: String(item.id),
+        title: item.title,
+        description: item.description,
+        status: item.status,
+        time: item.time,
+        module: item.module
+      })))
+      setApiQuotas((payload.apiQuotas || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        used: item.used ?? 0,
+        amount: item.amount ?? '-',
+        status: item.status ?? 'normal',
+        trend: item.trend ?? 0
+      })))
+      setSystemResources(payload.systemResources || { cpuUsage: 0, memoryUsage: 0, diskUsage: 0 })
+      setWorkflowStatus((payload.workflowStatus || []).map((workflow: any) => ({
+        id: workflow.id,
+        name: workflow.name,
+        status: workflow.status,
+        nextRun: workflow.nextRun
+      })))
+      setHealthState(payload.health || { score: 0, level: '--', message: '暂无数据' })
+      setAnnouncements((payload.announcements || []).map((item: any) => ({
+        id: String(item.id),
+        title: item.title,
+        content: item.content,
+        type: item.type as AnnouncementBanner['type'],
+        isSticky: ['high', 'urgent'].includes(item.priority),
+        publishTime: item.publishTime
+      })))
+    } catch (error: any) {
+      console.error('加载仪表盘失败', error)
+      message.error(error.message || '加载仪表盘失败')
+    } finally {
+      setDashboardLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadDashboard(timeRange)
+  }, [])
+
+  const handleRangeChange = (value: string) => {
+    setTimeRange(value)
+    loadDashboard(value)
+  }
+
+  const handleNavigate = (path: string) => {
+    navigate(path)
+  }
+
+  const getActivityIcon = (status: RecentActivity['status']) => {
+    switch (status) {
+      case 'success':
+        return <CheckCircleOutlined />
+      case 'warning':
+        return <ExclamationCircleOutlined />
+      case 'error':
+        return <CloseCircleOutlined />
+      default:
+        return <InfoCircleOutlined />
+    }
+  }
+
+  const formatActivityTime = (value: string) => {
+    if (!value) return '--'
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('HH:mm') : value
+  }
+
+  const formatNextRun = (value?: string | null) => {
+    if (!value) return '未计划'
+    const parsed = dayjs(value)
+    return parsed.isValid() ? parsed.format('MM-DD HH:mm') : value
+  }
+
+  const safeHealthScore = Math.min(Math.max(healthState.score, 0), 100)
+  const healthColor = safeHealthScore >= 85
+    ? token.colorSuccess
+    : safeHealthScore >= 60
+    ? token.colorWarning
+    : token.colorError
+  const healthDegree = Math.round((safeHealthScore / 100) * 360)
+
+  const getActivityColor = (status: RecentActivity['status']) => {
+    switch (status) {
+      case 'success':
+        return token.colorSuccess
+      case 'warning':
+        return token.colorWarning
+      case 'error':
+        return token.colorError
+      default:
+        return token.colorPrimary
+    }
+  }
 
   const handleSystemControl = async (action: 'refresh' | 'restart') => {
     const endpoint = action === 'refresh' ? 'refresh' : 'restart'
@@ -260,17 +409,19 @@ const Dashboard: React.FC = () => {
     }
   }
 
-  const MetricCard = ({ title, value, prefix, suffix, trend, color, icon, description }: any) => (
+  const MetricCard = ({ title, value, prefix, suffix, trend, color, icon, description, onClick }: any) => (
     <Card 
       hoverable
+      onClick={onClick}
       style={{
         borderRadius: 12,
         border: `1px solid ${token.colorBorderSecondary}`,
         boxShadow: token.boxShadowTertiary,
         transition: 'all 0.3s ease',
-        height: '160px', // 固定高度确保统一
+        height: '160px',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        cursor: onClick ? 'pointer' : 'default'
       }}
       bodyStyle={{ 
         padding: 24, 
@@ -535,7 +686,8 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div style={{ animation: 'fadeInUp 0.6s ease-out' }}>
+    <Spin spinning={dashboardLoading}>
+      <div style={{ animation: 'fadeInUp 0.6s ease-out' }}>
       {/* 公告横幅 */}
       {announcements.filter(a => a.isSticky).map(announcement => (
         <Alert
@@ -614,6 +766,7 @@ const Dashboard: React.FC = () => {
             color={token.colorPrimary}
             icon={<FileOutlined />}
             description="累计发布文章数量"
+            onClick={() => handleNavigate('/content')}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -624,6 +777,7 @@ const Dashboard: React.FC = () => {
             color={token.colorSuccess}
             icon={<ThunderboltOutlined />}
             description="今日新增发布"
+            onClick={() => handleNavigate('/publish-history')}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -635,6 +789,7 @@ const Dashboard: React.FC = () => {
             color="#722ed1"
             icon={<TrophyOutlined />}
             description="发布成功率"
+            onClick={() => handleNavigate('/publish-history')}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
@@ -646,6 +801,7 @@ const Dashboard: React.FC = () => {
             color={token.colorWarning}
             icon={<EyeOutlined />}
             description="累计阅读量"
+            onClick={() => handleNavigate('/publish-history')}
           />
         </Col>
       </Row>
@@ -664,9 +820,10 @@ const Dashboard: React.FC = () => {
               <Space>
                 <Select
                   value={timeRange}
-                  onChange={setTimeRange}
+                  onChange={handleRangeChange}
                   size="small"
                   style={{ width: 100 }}
+                  loading={dashboardLoading}
                 >
                   <Option value="7d">近7天</Option>
                   <Option value="30d">近30天</Option>
@@ -682,7 +839,7 @@ const Dashboard: React.FC = () => {
                   ]}
                   size="small"
                 />
-                <Button size="small" type="link" icon={<MoreOutlined />}>
+                <Button size="small" type="link" icon={<MoreOutlined />} onClick={() => handleNavigate('/publish-history')}>
                   更多
                 </Button>
               </Space>
@@ -707,7 +864,7 @@ const Dashboard: React.FC = () => {
               </Flex>
             }
             extra={
-              <Button size="small" type="link">
+              <Button size="small" type="link" onClick={() => handleNavigate('/publish-history')}>
                 详细报告
               </Button>
             }
@@ -717,46 +874,52 @@ const Dashboard: React.FC = () => {
               boxShadow: token.boxShadowTertiary
             }}
           >
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+            {pieData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{
+                        backgroundColor: token.colorBgElevated,
+                        border: `1px solid ${token.colorBorderSecondary}`,
+                        borderRadius: 8
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ marginTop: 20 }}>
+                  {pieData.map((item, index) => (
+                    <Flex key={index} justify="space-between" align="center" style={{ marginBottom: 12 }}>
+                      <Flex align="center" gap={8}>
+                        <div style={{ 
+                          width: 12, 
+                          height: 12, 
+                          borderRadius: 2, 
+                          background: item.color 
+                        }} />
+                        <Text style={{ fontSize: 14 }}>{item.name}</Text>
+                      </Flex>
+                      <Text strong style={{ fontSize: 14 }}>{item.value}%</Text>
+                    </Flex>
                   ))}
-                </Pie>
-                <RechartsTooltip 
-                  contentStyle={{
-                    backgroundColor: token.colorBgElevated,
-                    border: `1px solid ${token.colorBorderSecondary}`,
-                    borderRadius: 8
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div style={{ marginTop: 20 }}>
-              {pieData.map((item, index) => (
-                <Flex key={index} justify="space-between" align="center" style={{ marginBottom: 12 }}>
-                  <Flex align="center" gap={8}>
-                    <div style={{ 
-                      width: 12, 
-                      height: 12, 
-                      borderRadius: 2, 
-                      background: item.color 
-                    }} />
-                    <Text style={{ fontSize: 14 }}>{item.name}</Text>
-                  </Flex>
-                  <Text strong style={{ fontSize: 14 }}>{item.value}%</Text>
-                </Flex>
-              ))}
-            </div>
+                </div>
+              </>
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无发布数据" />
+            )}
           </Card>
         </Col>
       </Row>
@@ -776,7 +939,7 @@ const Dashboard: React.FC = () => {
                 <Button size="small" icon={<FilterOutlined />}>
                   筛选
                 </Button>
-                <Button size="small" type="link">查看全部</Button>
+                <Button size="small" type="link" onClick={() => handleNavigate('/system/logs')}>查看全部</Button>
               </Space>
             }
             style={{
@@ -787,27 +950,28 @@ const Dashboard: React.FC = () => {
           >
             <List
               dataSource={recentActivities}
+              locale={{ emptyText: '暂无活动' }}
               renderItem={(item) => (
                 <List.Item style={{ padding: '16px 0', border: 'none' }}>
                   <List.Item.Meta
                     avatar={
                       <Avatar 
-                        icon={item.icon} 
+                        icon={getActivityIcon(item.status)} 
                         style={{ 
                           background: 'transparent',
                           border: 'none',
                           width: 32,
                           height: 32,
-                          color: item.status === 'success' ? token.colorSuccess :
-                                item.status === 'warning' ? token.colorWarning :
-                                item.status === 'error' ? token.colorError : token.colorPrimary
+                          color: getActivityColor(item.status)
                         }}
                       />
                     }
                     title={
                       <Flex justify="space-between" align="center">
                         <Text strong style={{ fontSize: 14 }}>{item.title}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>{item.time}</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {formatActivityTime(item.time)}
+                        </Text>
                       </Flex>
                     }
                     description={
@@ -816,7 +980,7 @@ const Dashboard: React.FC = () => {
                           {item.description}
                         </Text>
                         <div style={{ marginTop: 8 }}>
-                          <Tag color="blue" size="small">{item.user}</Tag>
+                          <Tag color="blue" size="small">{item.module}</Tag>
                         </div>
                       </div>
                     }
@@ -838,10 +1002,10 @@ const Dashboard: React.FC = () => {
             }
             extra={
               <Space>
-                <Button size="small" icon={<SettingOutlined />}>
+                <Button size="small" icon={<SettingOutlined />} onClick={() => handleNavigate('/config')}>
                   配置
                 </Button>
-                <Button size="small" type="link">管理配置</Button>
+                <Button size="small" type="link" onClick={() => handleNavigate('/data-sources')}>管理配置</Button>
               </Space>
             }
             style={{
@@ -851,7 +1015,9 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Flex vertical gap={20}>
-              {apiQuotas.map((quota, index) => (
+              {apiQuotas.map((quota, index) => {
+                const quotaColor = pieColors[index % pieColors.length]
+                return (
                 <div key={index}>
                   <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
                     <Flex align="center" gap={8}>
@@ -870,7 +1036,7 @@ const Dashboard: React.FC = () => {
                   </Flex>
                   <Progress 
                     percent={quota.used} 
-                    strokeColor={quota.color}
+                    strokeColor={quotaColor}
                     trailColor={token.colorFillSecondary}
                     strokeWidth={8}
                     style={{ marginBottom: 4 }}
@@ -882,7 +1048,7 @@ const Dashboard: React.FC = () => {
                     </Text>
                   </Flex>
                 </div>
-              ))}
+              )})}
             </Flex>
           </Card>
         </Col>
@@ -913,10 +1079,10 @@ const Dashboard: React.FC = () => {
               <div>
                 <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>CPU 使用率</Text>
-                  <Text strong style={{ fontSize: 14 }}>45%</Text>
+                  <Text strong style={{ fontSize: 14 }}>{systemResources.cpuUsage}%</Text>
                 </Flex>
                 <Progress 
-                  percent={45} 
+                  percent={systemResources.cpuUsage} 
                   strokeColor={token.colorPrimary} 
                   trailColor={token.colorFillSecondary} 
                 />
@@ -924,10 +1090,10 @@ const Dashboard: React.FC = () => {
               <div>
                 <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>内存使用率</Text>
-                  <Text strong style={{ fontSize: 14 }}>68%</Text>
+                  <Text strong style={{ fontSize: 14 }}>{systemResources.memoryUsage}%</Text>
                 </Flex>
                 <Progress 
-                  percent={68} 
+                  percent={systemResources.memoryUsage} 
                   strokeColor={token.colorSuccess} 
                   trailColor={token.colorFillSecondary} 
                 />
@@ -935,10 +1101,10 @@ const Dashboard: React.FC = () => {
               <div>
                 <Flex justify="space-between" style={{ marginBottom: 8 }}>
                   <Text style={{ fontSize: 14 }}>磁盘使用率</Text>
-                  <Text strong style={{ fontSize: 14 }}>32%</Text>
+                  <Text strong style={{ fontSize: 14 }}>{systemResources.diskUsage}%</Text>
                 </Flex>
                 <Progress 
-                  percent={32} 
+                  percent={systemResources.diskUsage} 
                   strokeColor={token.colorWarning} 
                   trailColor={token.colorFillSecondary} 
                 />
@@ -956,7 +1122,7 @@ const Dashboard: React.FC = () => {
               </Flex>
             }
             extra={
-              <Button size="small" type="link">
+              <Button size="small" type="link" onClick={() => handleNavigate('/workflows')}>
                 管理
               </Button>
             }
@@ -966,35 +1132,35 @@ const Dashboard: React.FC = () => {
               boxShadow: token.boxShadowTertiary
             }}
           >
-            <Flex vertical gap={16}>
-              {[
-                { name: '微信文章工作流', status: 'running', nextRun: '明天 03:00' },
-                { name: 'AI排行榜工作流', status: 'running', nextRun: '周二 03:00' },
-                { name: 'GitHub项目工作流', status: 'stopped', nextRun: '已暂停' }
-              ].map((workflow, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  padding: 16,
-                  background: token.colorFillAlter,
-                  borderRadius: 8,
-                  border: `1px solid ${token.colorBorderSecondary}`
-                }}>
-                  <div>
-                    <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 4 }}>
-                      {workflow.name}
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      下次运行: {workflow.nextRun}
-                    </Text>
+            {workflowStatus.length > 0 ? (
+              <Flex vertical gap={16}>
+                {workflowStatus.map((workflow) => (
+                  <div key={workflow.id} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    padding: 16,
+                    background: token.colorFillAlter,
+                    borderRadius: 8,
+                    border: `1px solid ${token.colorBorderSecondary}`
+                  }}>
+                    <div>
+                      <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 4 }}>
+                        {workflow.name}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        下次运行: {formatNextRun(workflow.nextRun)}
+                      </Text>
+                    </div>
+                    <Tag color={workflow.status === 'running' ? 'success' : workflow.status === 'paused' ? 'warning' : 'default'}>
+                      {workflow.status === 'running' ? '运行中' : workflow.status === 'paused' ? '暂停' : '已停止'}
+                    </Tag>
                   </div>
-                  <Tag color={workflow.status === 'running' ? 'success' : 'default'}>
-                    {workflow.status === 'running' ? '运行中' : '已停止'}
-                  </Tag>
-                </div>
-              ))}
-            </Flex>
+                ))}
+              </Flex>
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无工作流数据" />
+            )}
           </Card>
         </Col>
 
@@ -1007,7 +1173,7 @@ const Dashboard: React.FC = () => {
               </Flex>
             }
             extra={
-              <Button size="small" type="link">
+              <Button size="small" type="link" onClick={() => handleNavigate('/system/logs')}>
                 报告
               </Button>
             }
@@ -1022,7 +1188,7 @@ const Dashboard: React.FC = () => {
                 width: 120, 
                 height: 120, 
                 borderRadius: '50%',
-                background: `conic-gradient(${token.colorSuccess} 0deg 324deg, ${token.colorFillSecondary} 324deg 360deg)`,
+                background: `conic-gradient(${healthColor} 0deg ${healthDegree}deg, ${token.colorFillSecondary} ${healthDegree}deg 360deg)`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1039,26 +1205,27 @@ const Dashboard: React.FC = () => {
                   justifyContent: 'center',
                   fontSize: 20,
                   fontWeight: 'bold',
-                  color: token.colorSuccess
+                  color: healthColor
                 }}>
-                  90%
+                  {safeHealthScore}%
                 </div>
               </div>
               <Title level={4} style={{ 
                 margin: '0 0 8px 0', 
-                color: token.colorSuccess, 
+                color: healthColor, 
                 fontSize: 18 
               }}>
-                优秀
+                {healthState.level}
               </Title>
               <Text type="secondary" style={{ fontSize: 14 }}>
-                系统运行状态良好
+                {healthState.message}
               </Text>
             </div>
           </Card>
         </Col>
       </Row>
-    </div>
+      </div>
+    </Spin>
   )
 }
 

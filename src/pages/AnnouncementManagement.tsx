@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { 
   Card, 
   Table, 
@@ -8,14 +8,12 @@ import {
   Form, 
   Input, 
   Select,
-  Switch,
   Tag,
   message,
   Popconfirm,
   Tooltip,
   DatePicker,
   Radio,
-  Badge,
   Typography,
   Divider,
   Alert
@@ -26,7 +24,6 @@ import {
   DeleteOutlined, 
   EyeOutlined,
   SendOutlined,
-  BellOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
   CheckCircleOutlined,
@@ -36,83 +33,28 @@ import {
   CalendarOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Option } = Select
 const { TextArea } = Input
 const { Title, Text } = Typography
 
 interface Announcement {
-  id: string
+  id: number
   title: string
   content: string
-  type: 'info' | 'warning' | 'error' | 'success'
+  level: 'info' | 'warning' | 'error' | 'success'
   priority: 'low' | 'medium' | 'high' | 'urgent'
-  status: 'draft' | 'published' | 'expired'
-  targetUsers: 'all' | 'admin' | 'user'
+  status: 'draft' | 'published'
+  target: 'all' | 'admin' | 'user'
   publishTime: string
-  expireTime?: string
-  creator: string
+  creatorName?: string
   readCount: number
-  isSticky: boolean
 }
 
 const AnnouncementManagement: React.FC = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([
-    {
-      id: '1',
-      title: '系统维护通知',
-      content: '系统将于今晚23:00-01:00进行维护升级，期间可能影响正常使用，请提前做好准备。',
-      type: 'warning',
-      priority: 'high',
-      status: 'published',
-      targetUsers: 'all',
-      publishTime: '2024-01-15 10:00:00',
-      expireTime: '2024-01-16 01:00:00',
-      creator: '系统管理员',
-      readCount: 156,
-      isSticky: true
-    },
-    {
-      id: '2',
-      title: '新功能上线公告',
-      content: 'AI内容排序功能已正式上线，支持更智能的内容筛选和排序，欢迎体验使用。',
-      type: 'success',
-      priority: 'medium',
-      status: 'published',
-      targetUsers: 'all',
-      publishTime: '2024-01-14 09:00:00',
-      creator: '产品团队',
-      readCount: 89,
-      isSticky: false
-    },
-    {
-      id: '3',
-      title: 'API额度调整说明',
-      content: '为了更好地服务用户，我们对API调用额度进行了调整，详情请查看配置页面。',
-      type: 'info',
-      priority: 'medium',
-      status: 'published',
-      targetUsers: 'admin',
-      publishTime: '2024-01-13 14:30:00',
-      creator: '技术团队',
-      readCount: 23,
-      isSticky: false
-    },
-    {
-      id: '4',
-      title: '紧急安全更新',
-      content: '发现安全漏洞，请立即更新到最新版本，并检查相关配置。',
-      type: 'error',
-      priority: 'urgent',
-      status: 'draft',
-      targetUsers: 'admin',
-      publishTime: '2024-01-15 16:00:00',
-      creator: '安全团队',
-      readCount: 0,
-      isSticky: true
-    }
-  ])
-
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
   const [previewVisible, setPreviewVisible] = useState(false)
@@ -139,19 +81,61 @@ const AnnouncementManagement: React.FC = () => {
     { value: 'user', label: '普通用户' }
   ]
 
+  const fetchAnnouncements = async () => {
+    try {
+      setLoading(true)
+      const resp = await fetch(`${getApiBaseUrl()}/announcements`, {
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '获取公告失败')
+        return
+      }
+      setAnnouncements(
+        (data.data || []).map((item: any) => ({
+          ...item,
+          readCount: item.readCount ?? 0,
+        }))
+      )
+    } catch (error) {
+      console.error(error)
+      message.error('获取公告失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [])
+
   const handleEdit = (announcement: Announcement) => {
     setEditingAnnouncement(announcement)
     form.setFieldsValue({
       ...announcement,
       publishTime: dayjs(announcement.publishTime),
-      expireTime: announcement.expireTime ? dayjs(announcement.expireTime) : null
     })
     setIsModalVisible(true)
   }
 
-  const handleDelete = (id: string) => {
-    setAnnouncements(prev => prev.filter(item => item.id !== id))
-    message.success('公告已删除')
+  const handleDelete = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/announcements/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '删除公告失败')
+        return
+      }
+      message.success('公告已删除')
+      fetchAnnouncements()
+    } catch (error) {
+      console.error(error)
+      message.error('删除公告失败')
+    }
   }
 
   const handlePreview = (announcement: Announcement) => {
@@ -159,46 +143,77 @@ const AnnouncementManagement: React.FC = () => {
     setPreviewVisible(true)
   }
 
-  const handlePublish = (id: string) => {
-    setAnnouncements(prev => prev.map(item =>
-      item.id === id ? { ...item, status: 'published' as const } : item
-    ))
-    message.success('公告已发布')
+  const handlePublish = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/announcements/${id}/publish`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '发布失败')
+        return
+      }
+      message.success('公告已发布')
+      fetchAnnouncements()
+    } catch (error) {
+      console.error(error)
+      message.error('发布失败')
+    }
+  }
+
+  const handleUnpublish = async (id: number) => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/announcements/${id}/unpublish`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '撤回失败')
+        return
+      }
+      message.success('公告已撤回')
+      fetchAnnouncements()
+    } catch (error) {
+      console.error(error)
+      message.error('撤回失败')
+    }
   }
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      
-      if (editingAnnouncement) {
-        setAnnouncements(prev => prev.map(item =>
-          item.id === editingAnnouncement.id
-            ? { 
-                ...item, 
-                ...values,
-                publishTime: values.publishTime.format('YYYY-MM-DD HH:mm:ss'),
-                expireTime: values.expireTime ? values.expireTime.format('YYYY-MM-DD HH:mm:ss') : undefined
-              }
-            : item
-        ))
-        message.success('公告已更新')
-      } else {
-        const newAnnouncement: Announcement = {
-          id: Date.now().toString(),
-          ...values,
-          publishTime: values.publishTime.format('YYYY-MM-DD HH:mm:ss'),
-          expireTime: values.expireTime ? values.expireTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
-          creator: '当前用户',
-          readCount: 0,
-          status: 'draft'
-        }
-        setAnnouncements(prev => [...prev, newAnnouncement])
-        message.success('公告已创建')
+      const payload = {
+        ...values,
+        publishTime: values.publishTime
+          ? values.publishTime.format('YYYY-MM-DD HH:mm:ss')
+          : dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        level: values.level || 'info',
+        target: values.target || 'all',
       }
-      
+
+      const method = editingAnnouncement ? 'PUT' : 'POST'
+      const url = editingAnnouncement
+        ? `${getApiBaseUrl()}/announcements/${editingAnnouncement.id}`
+        : `${getApiBaseUrl()}/announcements`
+
+      const resp = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload)
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '保存公告失败')
+        return
+      }
+
+      message.success(editingAnnouncement ? '公告已更新' : '公告已创建')
       setIsModalVisible(false)
       setEditingAnnouncement(null)
       form.resetFields()
+      fetchAnnouncements()
     } catch (error) {
       console.error('表单验证失败:', error)
     }
@@ -237,11 +252,10 @@ const AnnouncementManagement: React.FC = () => {
       render: (text: string, record: Announcement) => (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            {record.isSticky && <Badge color="red" text="置顶" />}
             <Text strong style={{ fontSize: 14 }}>{text}</Text>
           </div>
           <div style={{ fontSize: 12, color: '#666' }}>
-            {getTypeTag(record.type)}
+            {getTypeTag(record.level)}
             {getPriorityTag(record.priority)}
           </div>
         </div>
@@ -249,11 +263,11 @@ const AnnouncementManagement: React.FC = () => {
     },
     {
       title: '目标用户',
-      dataIndex: 'targetUsers',
-      key: 'targetUsers',
+      dataIndex: 'target',
+      key: 'target',
       width: 100,
-      render: (targetUsers: string) => {
-        const option = targetUserOptions.find(o => o.value === targetUsers)
+      render: (target: string) => {
+        const option = targetUserOptions.find(o => o.value === target)
         return <Tag color="blue">{option?.label}</Tag>
       }
     },
@@ -290,8 +304,8 @@ const AnnouncementManagement: React.FC = () => {
     },
     {
       title: '创建者',
-      dataIndex: 'creator',
-      key: 'creator',
+      dataIndex: 'creatorName',
+      key: 'creatorName',
       width: 100
     },
     {
@@ -321,6 +335,15 @@ const AnnouncementManagement: React.FC = () => {
                 type="primary"
                 icon={<SendOutlined />}
                 onClick={() => handlePublish(record.id)}
+              />
+            </Tooltip>
+          )}
+          {record.status === 'published' && (
+            <Tooltip title="撤回">
+              <Button
+                size="small"
+                icon={<SendOutlined style={{ transform: 'rotate(180deg)' }} />}
+                onClick={() => handleUnpublish(record.id)}
               />
             </Tooltip>
           )}
@@ -378,6 +401,7 @@ const AnnouncementManagement: React.FC = () => {
           columns={columns}
           dataSource={announcements}
           rowKey="id"
+          loading={loading}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -405,10 +429,9 @@ const AnnouncementManagement: React.FC = () => {
           form={form}
           layout="vertical"
           initialValues={{
-            type: 'info',
+            level: 'info',
             priority: 'medium',
-            targetUsers: 'all',
-            isSticky: false,
+            target: 'all',
             publishTime: dayjs()
           }}
         >
@@ -430,7 +453,7 @@ const AnnouncementManagement: React.FC = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Form.Item
-              name="type"
+              name="level"
               label="公告类型"
               rules={[{ required: true, message: '请选择公告类型' }]}
             >
@@ -462,7 +485,7 @@ const AnnouncementManagement: React.FC = () => {
           </div>
 
           <Form.Item
-            name="targetUsers"
+            name="target"
             label="目标用户"
             rules={[{ required: true, message: '请选择目标用户' }]}
           >
@@ -475,37 +498,16 @@ const AnnouncementManagement: React.FC = () => {
             </Radio.Group>
           </Form.Item>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <Form.Item
-              name="publishTime"
-              label="发布时间"
-              rules={[{ required: true, message: '请选择发布时间' }]}
-            >
-              <DatePicker
-                showTime
-                style={{ width: '100%' }}
-                placeholder="选择发布时间"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="expireTime"
-              label="过期时间"
-            >
-              <DatePicker
-                showTime
-                style={{ width: '100%' }}
-                placeholder="选择过期时间（可选）"
-              />
-            </Form.Item>
-          </div>
-
           <Form.Item
-            name="isSticky"
-            label="置顶显示"
-            valuePropName="checked"
+            name="publishTime"
+            label="发布时间"
+            rules={[{ required: true, message: '请选择发布时间' }]}
           >
-            <Switch />
+            <DatePicker
+              showTime
+              style={{ width: '100%' }}
+              placeholder="选择发布时间"
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -521,12 +523,9 @@ const AnnouncementManagement: React.FC = () => {
         {previewAnnouncement && (
           <div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                {previewAnnouncement.isSticky && <Badge color="red" text="置顶" />}
-                <Title level={4} style={{ margin: 0 }}>{previewAnnouncement.title}</Title>
-              </div>
+              <Title level={4} style={{ margin: 0 }}>{previewAnnouncement.title}</Title>
               <Space>
-                {getTypeTag(previewAnnouncement.type)}
+                {getTypeTag(previewAnnouncement.level)}
                 {getPriorityTag(previewAnnouncement.priority)}
                 {getStatusTag(previewAnnouncement.status)}
               </Space>
@@ -545,18 +544,13 @@ const AnnouncementManagement: React.FC = () => {
             <div style={{ fontSize: 12, color: '#666' }}>
               <div style={{ marginBottom: 4 }}>
                 <strong>目标用户：</strong>
-                {targetUserOptions.find(o => o.value === previewAnnouncement.targetUsers)?.label}
+                {targetUserOptions.find(o => o.value === previewAnnouncement.target)?.label}
               </div>
               <div style={{ marginBottom: 4 }}>
                 <strong>发布时间：</strong>{previewAnnouncement.publishTime}
               </div>
-              {previewAnnouncement.expireTime && (
-                <div style={{ marginBottom: 4 }}>
-                  <strong>过期时间：</strong>{previewAnnouncement.expireTime}
-                </div>
-              )}
               <div style={{ marginBottom: 4 }}>
-                <strong>创建者：</strong>{previewAnnouncement.creator}
+                <strong>创建者：</strong>{previewAnnouncement.creatorName || '系统'}
               </div>
               <div>
                 <strong>阅读量：</strong>{previewAnnouncement.readCount}

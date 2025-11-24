@@ -14,7 +14,8 @@ import {
   Tooltip,
   Flex,
   theme,
-  Spin
+  Spin,
+  message
 } from 'antd'
 import {
   BellOutlined,
@@ -37,6 +38,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 dayjs.extend(relativeTime)
 
@@ -65,81 +67,95 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ count = 0 }) =>
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
-  
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: '1',
-      title: '微信工作流执行完成',
-      content: '成功发布 8 篇文章到微信公众号',
-      type: 'workflow',
-      priority: 'medium',
-      isRead: false,
-      time: '2024-01-15 14:30:25',
-      source: 'WeixinWorkflow',
-      actionUrl: '/publish-history',
-      avatar: <CheckCircleOutlined style={{ color: token.colorSuccess }} />
-    },
-    {
-      id: '2',
-      title: 'FireCrawl API额度警告',
-      content: '当前额度剩余不足20%，建议及时充值',
-      type: 'warning',
-      priority: 'high',
-      isRead: false,
-      time: '2024-01-15 12:15:30',
-      source: 'APIMonitor',
-      actionUrl: '/config',
-      avatar: <ExclamationCircleOutlined style={{ color: token.colorWarning }} />
-    },
-    {
-      id: '3',
-      title: '系统维护通知',
-      content: '系统将于今晚23:00-01:00进行维护升级',
-      type: 'announcement',
-      priority: 'high',
-      isRead: false,
-      time: '2024-01-15 10:00:00',
-      source: '系统管理员',
-      actionUrl: '/announcements',
-      avatar: <InfoCircleOutlined style={{ color: token.colorPrimary }} />
-    },
-    {
-      id: '4',
-      title: 'AI内容排序完成',
-      content: '使用DeepSeek模型对内容进行智能排序',
-      type: 'system',
-      priority: 'low',
-      isRead: true,
-      time: '2024-01-15 09:25:10',
-      source: 'ContentRanker',
-      actionUrl: '/content',
-      avatar: <TrophyOutlined style={{ color: token.colorPrimary }} />
-    },
-    {
-      id: '5',
-      title: 'Twitter API调用失败',
-      content: 'API速率限制，将在15分钟后重试',
-      type: 'error',
-      priority: 'medium',
-      isRead: true,
-      time: '2024-01-15 08:30:15',
-      source: 'TwitterScraper',
-      actionUrl: '/data-sources',
-      avatar: <CloseCircleOutlined style={{ color: token.colorError }} />
-    },
-    {
-      id: '6',
-      title: 'GitHub热门项目抓取',
-      content: '发现 15 个新的AI相关热门项目',
-      type: 'system',
-      priority: 'low',
-      isRead: true,
-      time: '2024-01-14 18:45:33',
-      source: 'GitHubScraper',
-      actionUrl: '/content',
-      avatar: <RocketOutlined style={{ color: token.colorSuccess }} />
+  const [notifications, setNotifications] = useState<Notification[]>([])
+
+  const mapPriority = (priority?: string): Notification['priority'] => {
+    if (!priority) return 'medium'
+    const normalized = priority.toLowerCase()
+    if (['low', 'medium', 'high', 'urgent'].includes(normalized)) {
+      return normalized as Notification['priority']
     }
-  ])
+    return 'medium'
+  }
+
+  const fetchNotifications = async () => {
+    setLoading(true)
+    try {
+      const [annRes, workflowRes] = await Promise.all([
+        fetch(`${getApiBaseUrl()}/announcements`, {
+          headers: getAuthHeaders()
+        }),
+        fetch(`${getApiBaseUrl()}/publish-history?page=1&pageSize=10`, {
+          headers: getAuthHeaders()
+        })
+      ])
+
+      const annJson = await annRes.json().catch(() => ({}))
+      const workflowJson = await workflowRes.json().catch(() => ({}))
+
+      if (!annRes.ok || annJson.code !== 200) {
+        throw new Error(annJson?.message || '获取公告失败')
+      }
+      if (!workflowRes.ok || workflowJson.code !== 200) {
+        throw new Error(workflowJson?.message || '获取工作流通知失败')
+      }
+
+      const announcementNotifications: Notification[] = (annJson.data || [])
+        .filter((item: any) => item.status === 'published')
+        .map((item: any) => ({
+          id: `announcement-${item.id}`,
+          title: item.title,
+          content: item.content?.slice(0, 80) || '系统公告',
+          type: 'system',
+          priority: mapPriority(item.priority),
+          isRead: false,
+          time: item.publishTime || item.createdAt,
+          source: item.creatorName || '系统公告',
+          actionUrl: '/announcements',
+          avatar: <InfoCircleOutlined style={{ color: token.colorPrimary }} />
+        }))
+
+      const workflowNotifications: Notification[] = (workflowJson.data?.items || [])
+        .slice(0, 10)
+        .map((item: any) => {
+          const isSuccess = item.status === 'published'
+          const statusLabel = isSuccess ? '发布成功' : '发布异常'
+          return {
+            id: `workflow-${item.id}`,
+            title: `${item.workflowType || '工作流'} ${statusLabel}`,
+            content: `共生成 ${item.articleCount ?? 0} 篇内容 · 状态：${item.status}`,
+            type: 'workflow',
+            priority: isSuccess ? 'medium' : 'high',
+            isRead: false,
+            time: item.publishTime || item.createdAt,
+            source: item.workflowType || 'workflow',
+            actionUrl: '/publish-history',
+            avatar: isSuccess
+              ? <CheckCircleOutlined style={{ color: token.colorSuccess }} />
+              : <CloseCircleOutlined style={{ color: token.colorError }} />
+          } as Notification
+        })
+
+      const merged = [...announcementNotifications, ...workflowNotifications]
+        .sort((a, b) => dayjs(b.time).valueOf() - dayjs(a.time).valueOf())
+      setNotifications(merged)
+    } catch (err: any) {
+      console.error(err)
+      message.error(err.message || '加载通知失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      fetchNotifications()
+    }
+  }, [open])
 
   // 计算未读数量
   const unreadCount = notifications.filter(n => !n.isRead).length
@@ -213,7 +229,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ count = 0 }) =>
       high: { color: 'orange', text: '高' },
       urgent: { color: 'red', text: '紧急' }
     }
-    const config = configs[priority as keyof typeof configs]
+    const config = configs[priority as keyof typeof configs] || configs.medium
     return <Tag color={config.color} size="small">{config.text}</Tag>
   }
 

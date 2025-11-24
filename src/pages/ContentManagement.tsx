@@ -201,9 +201,10 @@ const ContentManagement: React.FC = () => {
     const statusConfig = {
       published: { color: 'success', text: '已发布' },
       draft: { color: 'processing', text: '草稿' },
+      generated: { color: 'blue', text: '已生成' },
       failed: { color: 'error', text: '失败' }
     }
-    const config = statusConfig[status as keyof typeof statusConfig]
+    const config = statusConfig[status as keyof typeof statusConfig] || { color: 'default', text: status || '未知' }
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
