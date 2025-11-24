@@ -1,0 +1,16 @@
+<svg width="600" height="320" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2ff"/>
+      <stop offset="100%" stop-color="#d1e9ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="320" rx="28" fill="url(#grad)"/>
+  <g fill="#2563eb" font-family="Segoe UI, sans-serif">
+    <text x="60" y="140" font-size="28" font-weight="600">Template Preview</text>
+    <text x="60" y="180" font-size="16" fill="#3b82f6">等待上传封面图，或在模板管理中设置 previewUrl</text>
+  </g>
+  <circle cx="480" cy="160" r="68" fill="#fff" opacity="0.85"/>
+  <path d="M480 120 L515 200 L445 200 Z" fill="#93c5fd"/>
+</svg>
+

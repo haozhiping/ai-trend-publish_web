@@ -28,7 +28,8 @@ const { Search } = Input
 
 interface LogEntry {
   id: number
-  timestamp: string
+  timestamp?: string
+  createdAt?: string
   level: 'info' | 'warn' | 'error' | 'debug'
   module: string
   message: string
@@ -63,8 +64,8 @@ const SystemLogs: React.FC = () => {
       if (filters.module) params.append('module', filters.module)
       if (filters.search) params.append('keyword', filters.search)
       if (filters.dateRange && filters.dateRange.length === 2) {
-        params.append('startTime', filters.dateRange[0].toISOString())
-        params.append('endTime', filters.dateRange[1].toISOString())
+        params.append('startTime', filters.dateRange[0].format('YYYY-MM-DD HH:mm:ss'))
+        params.append('endTime', filters.dateRange[1].format('YYYY-MM-DD HH:mm:ss'))
       }
       const resp = await fetch(`${getApiBaseUrl()}/system/logs?${params.toString()}`, {
         headers: getAuthHeaders()
@@ -74,8 +75,12 @@ const SystemLogs: React.FC = () => {
         message.error(data?.message || '获取日志失败')
         return
       }
-      setLogs(data.data.items || [])
-      const uniqueModules = Array.from(new Set((data.data.items || []).map((l: LogEntry) => l.module)))
+      const normalizedLogs = (data.data.items || []).map((log: any) => ({
+        ...log,
+        timestamp: log.timestamp || log.createdAt
+      }))
+      setLogs(normalizedLogs)
+      const uniqueModules: string[] = Array.from(new Set(normalizedLogs.map((l: LogEntry) => l.module)))
       setModules(uniqueModules)
     } catch (error) {
       console.error(error)
@@ -224,7 +229,7 @@ const SystemLogs: React.FC = () => {
         <div className="log-container">
           {logs.map(log => (
             <div key={log.id} className="log-line">
-              <span className="log-timestamp">[{log.timestamp}]</span>
+              <span className="log-timestamp">[{log.timestamp || log.createdAt}]</span>
               <span style={{ marginRight: 8 }}>
                 {getLevelTag(log.level)}
               </span>

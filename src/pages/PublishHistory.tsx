@@ -11,7 +11,8 @@ import {
   Input,
   Tooltip,
   Progress,
-  message
+  message,
+  Tabs
 } from 'antd'
 import { 
   EyeOutlined, 
@@ -64,8 +65,8 @@ const PublishHistory: React.FC = () => {
       if (filters.status) params.append('status', filters.status)
       if (filters.workflowType) params.append('workflowType', filters.workflowType)
       if (filters.dateRange && filters.dateRange.length === 2) {
-        params.append('startTime', filters.dateRange[0].startOf('day').toISOString())
-        params.append('endTime', filters.dateRange[1].endOf('day').toISOString())
+        params.append('startTime', filters.dateRange[0].startOf('day').format('YYYY-MM-DD HH:mm:ss'))
+        params.append('endTime', filters.dateRange[1].endOf('day').format('YYYY-MM-DD HH:mm:ss'))
       }
       params.append('page', String(pagination.page))
       params.append('pageSize', String(pagination.pageSize))
@@ -167,13 +168,26 @@ const PublishHistory: React.FC = () => {
       key: 'successRate',
       width: 150,
       render: (_, record: PublishRecord) => {
+        if (record.status === 'draft') {
+          return (
+            <div style={{ color: '#faad14' }}>
+              草稿待发布（{record.articleCount} 篇）
+            </div>
+          )
+        }
+
         const rate = record.articleCount > 0 ? (record.successCount / record.articleCount) * 100 : 0
+        const progressStatus = record.status === 'failed'
+          ? 'exception'
+          : rate === 100
+            ? 'success'
+            : 'active'
         return (
           <div>
             <Progress 
               percent={rate} 
               size="small" 
-              status={rate === 100 ? 'success' : rate === 0 ? 'exception' : 'active'}
+              status={progressStatus as any}
             />
             <div style={{ fontSize: 12, color: '#666' }}>
               {record.successCount}/{record.articleCount}
@@ -391,22 +405,72 @@ const PublishHistory: React.FC = () => {
 
             <div style={{ marginBottom: 16 }}>
               <strong>执行日志：</strong>
-              <div style={{ 
-                marginTop: 8, 
-                padding: 12, 
-                background: '#f5f5f5', 
-                borderRadius: 4,
-                fontFamily: 'monospace',
-                fontSize: 12,
-                maxHeight: 200,
-                overflow: 'auto'
-              }}>
-                {previewRecord.metadata?.logs?.length
-                  ? previewRecord.metadata.logs.map((log: string, idx: number) => (
-                      <div key={idx}>{log}</div>
-                    ))
-                  : <div>暂无日志</div>}
-              </div>
+              <Tabs
+                defaultActiveKey="summary"
+                style={{ marginTop: 12 }}
+                items={[
+                  {
+                    key: 'summary',
+                    label: '概览',
+                    children: (
+                      <div
+                        style={{
+                          padding: 12,
+                          background: '#f5f5f5',
+                          borderRadius: 4,
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          maxHeight: 220,
+                          overflow: 'auto'
+                        }}
+                      >
+                        {previewRecord.metadata?.logs?.length
+                          ? previewRecord.metadata.logs.map((log: string, idx: number) => (
+                              <div key={idx}>{log}</div>
+                            ))
+                          : <div>暂无日志</div>}
+                      </div>
+                    )
+                  },
+                  {
+                    key: 'details',
+                    label: '管理员视图',
+                    children: (
+                      <div
+                        style={{
+                          padding: 12,
+                          background: '#1e1e1e',
+                          color: '#e8e8e8',
+                          borderRadius: 4,
+                          maxHeight: 320,
+                          overflow: 'auto',
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontSize: 12
+                        }}
+                      >
+                        {previewRecord.metadata?.rawLogs?.length
+                          ? previewRecord.metadata.rawLogs.map((log: any, idx: number) => (
+                              <div
+                                key={`${log.timestamp}-${idx}`}
+                                style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '8px 0' }}
+                              >
+                                <div style={{ marginBottom: 4, color: '#bfbfbf' }}>
+                                  [{log.timestamp}] [{log.level?.toUpperCase()}] [{log.module}]
+                                </div>
+                                <div>{log.message}</div>
+                                {log.details && (
+                                  <pre style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>
+                                    {JSON.stringify(log.details, null, 2)}
+                                  </pre>
+                                )}
+                              </div>
+                            ))
+                          : <div>暂无完整日志</div>}
+                      </div>
+                    )
+                  }
+                ]}
+              />
             </div>
           </div>
         )}

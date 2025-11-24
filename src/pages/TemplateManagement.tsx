@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
+import placeholderImg from '../assets/template-placeholder.svg'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -225,10 +226,14 @@ const TemplateManagement: React.FC = () => {
                     hoverable
                     cover={
                       <div style={{ position: 'relative' }}>
-                    <img
-                      alt={template.name}
-                      src={template.previewUrl}
-                          style={{ width: '100%', height: 'auto' }}
+                        <img
+                          alt={template.name}
+                          src={template.previewUrl || placeholderImg}
+                          style={{ width: '100%', height: 'auto', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement
+                            target.src = placeholderImg
+                          }}
                         />
                         {template.isDefault && (
                           <Tag 
