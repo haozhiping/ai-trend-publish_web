@@ -91,9 +91,17 @@ const ConfigManagement: React.FC = () => {
   }
 
   const SecretInput: React.FC<{ field: string; placeholder: string }> = ({ field, placeholder }) => (
-    <Input.Password
+    <Input
       placeholder={placeholder}
-      iconRender={(visible) => visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+      type={showSecrets[field] ? 'text' : 'password'}
+      suffix={
+        <Button
+          type="text"
+          size="small"
+          icon={showSecrets[field] ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+          onClick={() => toggleSecretVisibility(field)}
+        />
+      }
     />
   )
 

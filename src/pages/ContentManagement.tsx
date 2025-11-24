@@ -11,7 +11,9 @@ import {
   DatePicker,
   Rate,
   Tooltip,
-  Popover
+  message,
+  Form,
+  InputNumber
 } from 'antd'
 import { 
   EyeOutlined, 
@@ -36,17 +38,19 @@ interface ContentItem {
   url: string
   source: string
   platform: string
-  publishDate: string
+  publishDate: string | null
   score: number | null
   status: 'published' | 'draft' | 'failed'
   keywords: string[]
+  summary?: string | null
+  tags?: string[]
   media?: string[]
 }
 
 const ContentManagement: React.FC = () => {
   const [contents, setContents] = useState<ContentItem[]>([])
 
-  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewContent, setPreviewContent] = useState<ContentItem | null>(null)
   const [filters, setFilters] = useState({
@@ -54,6 +58,9 @@ const ContentManagement: React.FC = () => {
     status: '',
     dateRange: null as any
   })
+  const [editVisible, setEditVisible] = useState(false)
+  const [editingContent, setEditingContent] = useState<ContentItem | null>(null)
+  const [editForm] = Form.useForm()
 
   // 加载内容列表
   const loadContents = async () => {
@@ -77,6 +84,76 @@ const ContentManagement: React.FC = () => {
   useEffect(() => {
     loadContents()
   }, [])
+
+  const parseScoreValue = (value: number | null | undefined) => {
+    const parsed = Number(value ?? 0)
+    return Number.isNaN(parsed) ? 0 : parsed
+  }
+
+  const openEditModal = (item: ContentItem) => {
+    setEditingContent(item)
+    editForm.setFieldsValue({
+      title: item.title,
+      summary: item.summary ?? '',
+      source: item.source,
+      platform: item.platform ?? '',
+      url: item.url ?? '',
+      status: item.status,
+      score: item.score ?? undefined,
+      publishDate: item.publishDate ? dayjs(item.publishDate) : null,
+    })
+    setEditVisible(true)
+  }
+
+  const handleEditSubmit = async () => {
+    if (!editingContent) {
+      return
+    }
+
+    try {
+      const values = await editForm.validateFields()
+      const payload = {
+        title: values.title,
+        summary: values.summary || null,
+        source: values.source || null,
+        platform: values.platform || null,
+        url: values.url || null,
+        status: values.status,
+        score: values.score !== undefined && values.score !== null
+          ? Number(values.score)
+          : null,
+        publishDate: values.publishDate
+          ? values.publishDate.toISOString()
+          : null,
+      }
+
+      const resp = await fetch(`${getApiBaseUrl()}/content/${editingContent.id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '保存内容失败')
+        return
+      }
+
+      message.success('内容已更新')
+      setEditVisible(false)
+      setEditingContent(null)
+      editForm.resetFields()
+      loadContents()
+    } catch (error) {
+      console.error('更新内容失败:', error)
+      message.error('更新内容失败')
+    }
+  }
+
+  const handleEditCancel = () => {
+    setEditVisible(false)
+    setEditingContent(null)
+    editForm.resetFields()
+  }
 
   const handlePreview = (content: ContentItem) => {
     setPreviewContent(content)
@@ -140,8 +217,8 @@ const ContentManagement: React.FC = () => {
         <div>
           <div style={{ fontWeight: 500, marginBottom: 4 }}>{text}</div>
           <div style={{ fontSize: 12, color: '#666' }}>
-            {record.keywords.map(keyword => (
-              <Tag key={keyword} size="small">{keyword}</Tag>
+            {record.keywords?.map(keyword => (
+              <Tag key={keyword}>{keyword}</Tag>
             ))}
           </div>
         </div>
@@ -159,13 +236,16 @@ const ContentManagement: React.FC = () => {
       dataIndex: 'score',
       key: 'score',
       width: 120,
-      render: (score: number) => (
-        <div>
-          <Rate disabled value={score / 20} style={{ fontSize: 12 }} />
-          <div style={{ fontSize: 12, color: '#666' }}>{score.toFixed(1)}</div>
-        </div>
-      ),
-      sorter: (a: ContentItem, b: ContentItem) => a.score - b.score
+      render: (score: number | null) => {
+        const value = parseScoreValue(score)
+        return (
+          <div>
+            <Rate disabled value={value / 20} style={{ fontSize: 12 }} />
+            <div style={{ fontSize: 12, color: '#666' }}>{value.toFixed(1)}</div>
+          </div>
+        )
+      },
+      sorter: (a: ContentItem, b: ContentItem) => parseScoreValue(a.score) - parseScoreValue(b.score)
     },
     {
       title: '状态',
@@ -179,8 +259,11 @@ const ContentManagement: React.FC = () => {
       dataIndex: 'publishDate',
       key: 'publishDate',
       width: 150,
-      sorter: (a: ContentItem, b: ContentItem) => 
-        dayjs(a.publishDate).unix() - dayjs(b.publishDate).unix()
+      sorter: (a: ContentItem, b: ContentItem) => {
+        const timeA = dayjs(a.publishDate || undefined).unix()
+        const timeB = dayjs(b.publishDate || undefined).unix()
+        return timeA - timeB
+      }
     },
     {
       title: '操作',
@@ -199,6 +282,7 @@ const ContentManagement: React.FC = () => {
             <Button
               size="small"
               icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
             />
           </Tooltip>
           <Tooltip title="删除">
@@ -216,7 +300,7 @@ const ContentManagement: React.FC = () => {
 
   const rowSelection = {
     selectedRowKeys,
-    onChange: setSelectedRowKeys,
+    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
   }
 
   return (
@@ -306,7 +390,7 @@ const ContentManagement: React.FC = () => {
               <Space>
                 {getSourceTag(previewContent.source)}
                 {getStatusTag(previewContent.status)}
-                <Tag>评分: {previewContent.score.toFixed(1)}</Tag>
+                <Tag>评分: {parseScoreValue(previewContent.score).toFixed(1)}</Tag>
               </Space>
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -361,6 +445,58 @@ const ContentManagement: React.FC = () => {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        title="编辑内容"
+        open={editVisible}
+        width={720}
+        onOk={handleEditSubmit}
+        onCancel={handleEditCancel}
+        okText="保存"
+        cancelText="取消"
+      >
+        <Form
+          form={editForm}
+          layout="vertical"
+        >
+          <Form.Item
+            label="标题"
+            name="title"
+            rules={[{ required: true, message: '请输入标题' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item label="摘要" name="summary">
+            <Input.TextArea rows={3} />
+          </Form.Item>
+          <Form.Item label="来源" name="source">
+            <Input />
+          </Form.Item>
+          <Form.Item label="平台" name="platform">
+            <Input />
+          </Form.Item>
+          <Form.Item label="原文链接" name="url">
+            <Input />
+          </Form.Item>
+          <Form.Item label="状态" name="status">
+            <Select>
+              <Option value="published">已发布</Option>
+              <Option value="draft">草稿</Option>
+              <Option value="failed">失败</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item label="评分" name="score">
+            <InputNumber min={0} max={100} step={0.1} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item label="发布时间" name="publishDate">
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm:ss"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   )

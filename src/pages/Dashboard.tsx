@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { 
   Row, 
@@ -18,7 +18,8 @@ import {
   theme,
   Segmented,
   DatePicker,
-  Select
+  Select,
+  message
 } from 'antd'
 import { 
   ArrowUpOutlined, 
@@ -65,6 +66,7 @@ import {
   Bar
 } from 'recharts'
 import dayjs from 'dayjs'
+import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -96,12 +98,13 @@ const Dashboard: React.FC = () => {
     }
   ])
 
-  const [systemStatus] = useState({
+  const [systemStatus, setSystemStatus] = useState({
     status: 'running',
     uptime: '2天 14小时 32分钟',
     lastUpdate: '2024-01-15 14:30:00',
     version: 'v1.2.3'
   })
+  const [systemBusy, setSystemBusy] = useState(false)
 
   const [metrics] = useState({
     totalArticles: 1247,
@@ -174,8 +177,87 @@ const Dashboard: React.FC = () => {
     { name: '阿里云 API', used: 30, total: 100, color: '#722ed1', amount: '¥28.90', trend: 8 }
   ])
 
-  const handleSystemControl = (action: string) => {
-    console.log(`执行系统操作: ${action}`)
+  const loadSystemStatus = async () => {
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/system/status`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      })
+      const data = await resp.json()
+      if (resp.ok && data.code === 200 && data.data) {
+        setSystemStatus(data.data)
+      }
+    } catch (error) {
+      console.error('加载系统状态失败', error)
+    }
+  }
+
+  useEffect(() => {
+    loadSystemStatus()
+  }, [])
+
+  const handleSystemControl = async (action: 'refresh' | 'restart') => {
+    const endpoint = action === 'refresh' ? 'refresh' : 'restart'
+    setSystemBusy(true)
+    
+    if (action === 'restart') {
+      // 重启后端会导致前端也需要刷新，提示用户
+      const confirmed = window.confirm(
+        '⚠️  确定要重启后端服务吗？\n\n' +
+        '【重要】请确保后端是以下方式之一启动的：\n' +
+        '✓ 使用 start-backend-loop.bat（自动重启脚本）\n' +
+        '✓ PM2 守护进程\n' +
+        '✓ systemd 服务\n\n' +
+        '如果是手动 deno task start 启动的：\n' +
+        '❌ 点击重启后后端将退出且无法自动恢复\n' +
+        '❌ 需要手动到终端重新运行 deno task start\n\n' +
+        '重启后新的配置将生效。\n\n' +
+        '是否继续？'
+      )
+      if (!confirmed) {
+        setSystemBusy(false)
+        return
+      }
+    }
+    
+    try {
+      const resp = await fetch(`${getApiBaseUrl()}/system/${endpoint}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+      const data = await resp.json()
+      if (!resp.ok || data.code !== 200) {
+        message.error(data?.message || '系统操作失败')
+        return
+      }
+      
+      if (action === 'restart') {
+        message.success('后端正在重启，10 秒后自动刷新页面...', 10)
+        // 10 秒后自动刷新页面（给后端足够时间重启）
+        setTimeout(() => {
+          window.location.reload()
+        }, 10000)
+      } else {
+        message.success(data.message || '操作成功')
+        if (data.data) {
+          setSystemStatus(data.data)
+        }
+      }
+    } catch (error) {
+      console.error('系统操作失败', error)
+      if (action === 'restart') {
+        message.warning('后端已退出，10 秒后尝试重新连接...', 10)
+        setTimeout(() => {
+          window.location.reload()
+        }, 10000)
+      } else {
+        message.error('系统操作失败')
+      }
+    } finally {
+      if (action !== 'restart') {
+        setSystemBusy(false)
+      }
+    }
   }
 
   const MetricCard = ({ title, value, prefix, suffix, trend, color, icon, description }: any) => (
@@ -499,6 +581,7 @@ const Dashboard: React.FC = () => {
                 size="small" 
                 icon={<ReloadOutlined />}
                 onClick={() => handleSystemControl('refresh')}
+                loading={systemBusy}
               >
                 刷新状态
               </Button>
@@ -507,6 +590,7 @@ const Dashboard: React.FC = () => {
                 type="primary"
                 icon={<PlayCircleOutlined />}
                 onClick={() => handleSystemControl('restart')}
+                loading={systemBusy}
               >
                 重启系统
               </Button>
