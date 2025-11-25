@@ -52,7 +52,8 @@ const WorkflowManagement: React.FC = () => {
   const workflowTypes = [
     { value: 'weixin-article-workflow', label: '微信文章工作流' },
     { value: 'weixin-aibench-workflow', label: 'AI模型排行榜' },
-    { value: 'weixin-hellogithub-workflow', label: 'GitHub热门项目' }
+    { value: 'weixin-hellogithub-workflow', label: 'GitHub热门项目' },
+    { value: 'video-generate-workflow', label: '短视频生成' }
   ]
 
   const loadWorkflows = async () => {
@@ -192,7 +193,8 @@ const WorkflowManagement: React.FC = () => {
         name: values.name,
         type: values.type,
         description: values.description,
-        schedule
+        schedule,
+        config: values.config || {} // 包含工作流配置（如钉钉关键词等）
       }
 
       let url = `${getApiBaseUrl()}/workflows`
@@ -521,6 +523,41 @@ const WorkflowManagement: React.FC = () => {
           >
             <Input.TextArea placeholder="请输入工作流描述" />
           </Form.Item>
+
+          {workflowType === 'video-generate-workflow' && (
+            <>
+              <Form.Item
+                name={['config', 'dingtalkKeyword']}
+                label="钉钉通知关键词"
+                tooltip="钉钉机器人需要消息中包含此关键词才能发送。留空则使用系统默认关键词"
+              >
+                <Input placeholder="工作流" />
+              </Form.Item>
+              <Form.Item
+                name={['config', 'videoUrls']}
+                label="视频链接（可选，多个用逗号分隔）"
+              >
+                <Input.TextArea rows={2} placeholder="https://example.com/video1.mp4,https://example.com/video2.mp4" />
+              </Form.Item>
+              <Form.Item
+                name={['config', 'videoFiles']}
+                label="本地视频文件路径（可选，多个用逗号分隔）"
+              >
+                <Input.TextArea rows={2} placeholder="D:\videos\source1.mp4,D:\videos\source2.mp4" />
+              </Form.Item>
+              <Form.Item
+                name={['config', 'voiceModel']}
+                label="音色模型"
+              >
+                <Select placeholder="选择音色模型" defaultValue="zh-CN-XiaoxiaoNeural">
+                  <Option value="zh-CN-XiaoxiaoNeural">晓晓（女声，推荐）</Option>
+                  <Option value="zh-CN-YunxiNeural">云希（男声）</Option>
+                  <Option value="zh-CN-YunyangNeural">云扬（男声）</Option>
+                  <Option value="zh-CN-XiaoyiNeural">晓伊（女声）</Option>
+                </Select>
+              </Form.Item>
+            </>
+          )}
         </Form>
       </Modal>
     </div>

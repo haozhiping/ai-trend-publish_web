@@ -46,7 +46,8 @@ import {
   FullscreenExitOutlined,
   ReloadOutlined,
   NotificationOutlined,
-  FileProtectOutlined
+  FileProtectOutlined,
+  PlayCircleOutlined
 } from '@ant-design/icons'
 import Dashboard from './pages/Dashboard'
 import WorkflowManagement from './pages/WorkflowManagement'
@@ -57,6 +58,7 @@ import PublishHistory from './pages/PublishHistory'
 import ConfigManagement from './pages/ConfigManagement'
 import SystemLogs from './pages/SystemLogs'
 import AnnouncementManagement from './pages/AnnouncementManagement'
+import VideoManagement from './pages/VideoManagement'
 import Login from './components/Login'
 import UserProfile from './components/UserProfile'
 import GlobalSearch from './components/GlobalSearch'
@@ -121,6 +123,12 @@ const menuItems = [
     icon: <NotificationOutlined />, 
     label: '通知公告',
     breadcrumb: '通知公告管理'
+  },
+  { 
+    key: '/videos', 
+    icon: <PlayCircleOutlined />, 
+    label: '短视频',
+    breadcrumb: '短视频管理'
   }
 ]
 

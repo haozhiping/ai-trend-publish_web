@@ -11,7 +11,8 @@ import {
   Upload,
   message,
   Popconfirm,
-  Tag
+  Tag,
+  Space
 } from 'antd'
 import { 
   PlusOutlined, 
@@ -19,11 +20,13 @@ import {
   DeleteOutlined, 
   EyeOutlined,
   CopyOutlined,
-  StarOutlined
+  StarOutlined,
+  SearchOutlined
 } from '@ant-design/icons'
 import Editor from '@monaco-editor/react'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 import placeholderImg from '../assets/template-placeholder.svg'
+import defaultTemplateImg from '../img/mysoai.png'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -40,8 +43,11 @@ interface Template {
 }
 
 const TemplateManagement: React.FC = () => {
+  const [allTemplates, setAllTemplates] = useState<Template[]>([])
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(false)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchType, setSearchType] = useState<string>('')
 
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [isPreviewVisible, setIsPreviewVisible] = useState(false)
@@ -66,7 +72,9 @@ const TemplateManagement: React.FC = () => {
         message.error(data?.message || '获取模板失败')
         return
       }
-      setTemplates(data.data || [])
+      const templateList = data.data || []
+      setAllTemplates(templateList)
+      setTemplates(templateList)
     } catch (error) {
       console.error(error)
       message.error('获取模板失败')
@@ -183,7 +191,7 @@ const TemplateManagement: React.FC = () => {
       aibench: { color: 'green', text: 'AI排行榜' },
       hellogithub: { color: 'orange', text: 'GitHub项目' }
     }
-    const config = typeConfig[type as keyof typeof typeConfig]
+    const config = typeConfig[type as keyof typeof typeConfig] || { color: 'default', text: type || '未知类型' }
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
@@ -194,6 +202,20 @@ const TemplateManagement: React.FC = () => {
     acc[template.type].push(template)
     return acc
   }, {} as Record<string, Template[]>)
+
+  const handleTemplateSearch = () => {
+    let filtered = allTemplates
+    if (searchKeyword) {
+      filtered = filtered.filter(t => 
+        t.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+        (t.description && t.description.toLowerCase().includes(searchKeyword.toLowerCase()))
+      )
+    }
+    if (searchType) {
+      filtered = filtered.filter(t => t.type === searchType)
+    }
+    setTemplates(filtered)
+  }
 
   return (
     <div>
@@ -214,6 +236,31 @@ const TemplateManagement: React.FC = () => {
           </Button>
         }
       >
+        <div style={{ marginBottom: 16 }}>
+          <Space wrap>
+            <Input.Search
+              placeholder="搜索模板名称或描述"
+              style={{ width: 300 }}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              allowClear
+            />
+            <Select
+              placeholder="选择模板类型"
+              style={{ width: 150 }}
+              value={searchType}
+              onChange={setSearchType}
+              allowClear
+            >
+              {templateTypes.map(type => (
+                <Option key={type.value} value={type.value}>{type.label}</Option>
+              ))}
+            </Select>
+            <Button type="primary" icon={<SearchOutlined />} onClick={handleTemplateSearch}>
+              检索
+            </Button>
+          </Space>
+        </div>
         {Object.entries(groupedTemplates).map(([type, typeTemplates]) => (
           <div key={type} style={{ marginBottom: 32 }}>
             <h3 style={{ marginBottom: 16 }}>
@@ -228,11 +275,11 @@ const TemplateManagement: React.FC = () => {
                       <div style={{ position: 'relative' }}>
                         <img
                           alt={template.name}
-                          src={template.previewUrl || placeholderImg}
+                          src={template.previewUrl || defaultTemplateImg}
                           style={{ width: '100%', height: 'auto', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                           onError={(e) => {
                             const target = e.currentTarget as HTMLImageElement
-                            target.src = placeholderImg
+                            target.src = defaultTemplateImg
                           }}
                         />
                         {template.isDefault && (

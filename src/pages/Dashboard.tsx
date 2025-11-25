@@ -809,7 +809,9 @@ const Dashboard: React.FC = () => {
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         {/* 发布趋势图表 */}
         <Col xs={24} lg={16}>
-          <Card 
+          <Card
+            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }} 
             title={
               <Flex align="center" gap={8}>
                 <LineChartOutlined style={{ color: token.colorPrimary }} />
@@ -844,11 +846,6 @@ const Dashboard: React.FC = () => {
                 </Button>
               </Space>
             }
-            style={{
-              borderRadius: 12,
-              border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
-            }}
           >
             {renderChart()}
           </Card>
@@ -856,7 +853,9 @@ const Dashboard: React.FC = () => {
 
         {/* 发布平台分布 */}
         <Col xs={24} lg={8}>
-          <Card 
+          <Card
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 400 }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }} 
             title={
               <Flex align="center" gap={8}>
                 <PieChartOutlined style={{ color: token.colorSuccess }} />
@@ -927,7 +926,9 @@ const Dashboard: React.FC = () => {
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         {/* 最近活动 */}
         <Col xs={24} lg={12}>
-          <Card 
+          <Card
+            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }} 
             title={
               <Flex align="center" gap={8}>
                 <ClockCircleOutlined style={{ color: token.colorWarning }} />
@@ -939,7 +940,7 @@ const Dashboard: React.FC = () => {
                 <Button size="small" icon={<FilterOutlined />}>
                   筛选
                 </Button>
-                <Button size="small" type="link" onClick={() => handleNavigate('/system/logs')}>查看全部</Button>
+                <Button size="small" type="link" onClick={() => handleNavigate('/system-logs')}>查看全部</Button>
               </Space>
             }
             style={{
@@ -949,7 +950,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <List
-              dataSource={recentActivities}
+              dataSource={recentActivities.slice(0, 5)}
               locale={{ emptyText: '暂无活动' }}
               renderItem={(item) => (
                 <List.Item style={{ padding: '16px 0', border: 'none' }}>
@@ -993,7 +994,9 @@ const Dashboard: React.FC = () => {
 
         {/* API 额度监控 */}
         <Col xs={24} lg={12}>
-          <Card 
+          <Card
+            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 400 }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }} 
             title={
               <Flex align="center" gap={8}>
                 <ApiOutlined style={{ color: '#722ed1' }} />
@@ -1015,7 +1018,7 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Flex vertical gap={20}>
-              {apiQuotas.map((quota, index) => {
+              {apiQuotas.slice(0, 5).map((quota, index) => {
                 const quotaColor = pieColors[index % pieColors.length]
                 return (
                 <div key={index}>
@@ -1072,8 +1075,13 @@ const Dashboard: React.FC = () => {
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
+              boxShadow: token.boxShadowTertiary,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 400
             }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
           >
             <Flex vertical gap={24}>
               <div>
@@ -1129,8 +1137,13 @@ const Dashboard: React.FC = () => {
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
+              boxShadow: token.boxShadowTertiary,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 400
             }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}
           >
             {workflowStatus.length > 0 ? (
               <Flex vertical gap={16}>
@@ -1173,15 +1186,20 @@ const Dashboard: React.FC = () => {
               </Flex>
             }
             extra={
-              <Button size="small" type="link" onClick={() => handleNavigate('/system/logs')}>
+              <Button size="small" type="link" onClick={() => handleNavigate('/system-logs')}>
                 报告
               </Button>
             }
             style={{
               borderRadius: 12,
               border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
+              boxShadow: token.boxShadowTertiary,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 400
             }}
+            bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
           >
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ 

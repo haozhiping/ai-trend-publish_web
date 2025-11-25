@@ -19,7 +19,8 @@ import {
   EditOutlined, 
   DeleteOutlined, 
   SyncOutlined,
-  LinkOutlined
+  LinkOutlined,
+  SearchOutlined
 } from '@ant-design/icons'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
 
@@ -37,6 +38,7 @@ interface DataSource {
 }
 
 const DataSources: React.FC = () => {
+  const [allDataSources, setAllDataSources] = useState<DataSource[]>([])
   const [dataSources, setDataSources] = useState<DataSource[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -61,7 +63,9 @@ const DataSources: React.FC = () => {
         message.error(data?.message || '获取数据源失败')
         return
       }
-      setDataSources(data.data || [])
+      const sources = data.data || []
+      setAllDataSources(sources)
+      setDataSources(sources)
     } catch (error) {
       console.error(error)
       message.error('获取数据源失败')
@@ -138,6 +142,20 @@ const DataSources: React.FC = () => {
       console.error(error)
       message.error({ content: '连接测试失败', key: 'test' })
     }
+  }
+
+  const handleSearch = (keyword?: string, type?: string) => {
+    let filtered = allDataSources
+    if (keyword) {
+      filtered = filtered.filter(ds => 
+        ds.name.toLowerCase().includes(keyword.toLowerCase()) ||
+        (ds.url && ds.url.toLowerCase().includes(keyword.toLowerCase()))
+      )
+    }
+    if (type) {
+      filtered = filtered.filter(ds => ds.type === type)
+    }
+    setDataSources(filtered)
   }
 
   const handleSync = async (source: DataSource) => {
@@ -329,6 +347,36 @@ const DataSources: React.FC = () => {
           </Button>
         }
       >
+        <div style={{ marginBottom: 16 }}>
+          <Space wrap>
+            <Input.Search
+              placeholder="搜索数据源名称或URL"
+              style={{ width: 300 }}
+              allowClear
+              onSearch={(value) => {
+                handleSearch(value, undefined)
+              }}
+            />
+            <Select
+              placeholder="选择类型"
+              style={{ width: 150 }}
+              allowClear
+              onChange={(value) => {
+                handleSearch(undefined, value)
+              }}
+            >
+              {sourceTypes.map(type => (
+                <Option key={type.value} value={type.value}>{type.label}</Option>
+              ))}
+            </Select>
+            <Button type="primary" icon={<SearchOutlined />} onClick={() => {
+              fetchDataSources()
+              setDataSources(allDataSources)
+            }}>
+              检索
+            </Button>
+          </Space>
+        </div>
         <Table
           columns={columns}
           dataSource={dataSources}

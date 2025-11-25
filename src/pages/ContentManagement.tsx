@@ -54,6 +54,7 @@ const ContentManagement: React.FC = () => {
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewContent, setPreviewContent] = useState<ContentItem | null>(null)
   const [filters, setFilters] = useState({
+    keyword: '',
     source: '',
     status: '',
     dateRange: null as any
@@ -65,7 +66,16 @@ const ContentManagement: React.FC = () => {
   // 加载内容列表
   const loadContents = async () => {
     try {
-      const resp = await fetch(`${getApiBaseUrl()}/content`, {
+      const params = new URLSearchParams()
+      if (filters.keyword) params.append('keyword', filters.keyword)
+      if (filters.source) params.append('source', filters.source)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.dateRange && filters.dateRange.length === 2) {
+        params.append('startDate', filters.dateRange[0].startOf('day').toISOString())
+        params.append('endDate', filters.dateRange[1].endOf('day').toISOString())
+      }
+      
+      const resp = await fetch(`${getApiBaseUrl()}/content?${params.toString()}`, {
         method: 'GET',
         headers: getAuthHeaders(),
       })
@@ -84,6 +94,10 @@ const ContentManagement: React.FC = () => {
   useEffect(() => {
     loadContents()
   }, [])
+
+  const handleSearch = () => {
+    loadContents()
+  }
 
   const parseScoreValue = (value: number | null | undefined) => {
     const parsed = Number(value ?? 0)
@@ -202,6 +216,7 @@ const ContentManagement: React.FC = () => {
       published: { color: 'success', text: '已发布' },
       draft: { color: 'processing', text: '草稿' },
       generated: { color: 'blue', text: '已生成' },
+      processed: { color: 'blue', text: '处理中' },
       failed: { color: 'error', text: '失败' }
     }
     const config = statusConfig[status as keyof typeof statusConfig] || { color: 'default', text: status || '未知' }
@@ -333,7 +348,10 @@ const ContentManagement: React.FC = () => {
             <Search
               placeholder="搜索标题或关键词"
               style={{ width: 300 }}
-              onSearch={(value) => console.log('搜索:', value)}
+              value={filters.keyword}
+              onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
+              onSearch={handleSearch}
+              allowClear
             />
             <Select
               placeholder="选择来源"
@@ -357,8 +375,12 @@ const ContentManagement: React.FC = () => {
             </Select>
             <RangePicker
               placeholder={['开始日期', '结束日期']}
+              value={filters.dateRange}
               onChange={(dates) => setFilters(prev => ({ ...prev, dateRange: dates }))}
             />
+            <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+              检索
+            </Button>
           </Space>
         </div>
 

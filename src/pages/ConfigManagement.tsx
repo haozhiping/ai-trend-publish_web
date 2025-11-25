@@ -315,12 +315,94 @@ const ConfigManagement: React.FC = () => {
             </TabPane>
 
             <TabPane tab="通知配置" key="notification">
+              <Alert
+                message="通知配置说明"
+                description="配置工作流执行结果的通知方式。工作流执行成功、失败或需要人工处理时，会发送通知到配置的平台。"
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+
+              <Divider orientation="left">Bark 通知</Divider>
               <Form.Item name="ENABLE_BARK" label="启用Bark通知" valuePropName="checked">
                 <Switch />
               </Form.Item>
-
               <Form.Item name="BARK_URL" label="Bark通知URL">
                 <Input placeholder="https://api.day.app/your_key" />
+              </Form.Item>
+
+              <Divider orientation="left">钉钉通知</Divider>
+              <Form.Item name="ENABLE_DINGDING" label="启用钉钉通知" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+              <Form.Item name="DINGDING_WEBHOOK" label="钉钉机器人Webhook">
+                <Input placeholder="https://oapi.dingtalk.com/robot/send?access_token=xxx" />
+              </Form.Item>
+              <Form.Item name="DINGDING_KEYWORD" label="钉钉机器人关键词">
+                <Input placeholder="工作流" />
+                <div style={{ marginTop: 8, fontSize: 12, color: '#666' }}>
+                  钉钉机器人需要消息中包含此关键词才能发送。可以在工作流配置中覆盖此设置。
+                </div>
+              </Form.Item>
+              <Alert
+                message="钉钉机器人配置"
+                description="在钉钉群聊中添加自定义机器人，获取Webhook地址。机器人需要设置关键词（如'工作流'），消息中必须包含此关键词才能发送。支持@所有人功能（紧急消息会自动@所有人）。"
+                type="info"
+                showIcon
+                style={{ marginTop: 16 }}
+              />
+            </TabPane>
+
+            <TabPane tab="短视频配置" key="video">
+              <Alert
+                message="短视频生成系统配置说明"
+                description="配置短视频生成系统的授权码和路径。系统会调用独立的视频生成程序（exe）来生成视频，生成的视频会保存到指定目录供用户下载。"
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+
+              <Divider orientation="left">授权码配置</Divider>
+              <Form.Item 
+                name="VIDEO_GENERATOR_LICENSE" 
+                label="短视频生成系统授权码"
+                rules={[{ required: true, message: '请输入授权码' }]}
+                tooltip="授权码支持按天/周/月/季度/半年/年/永久购买"
+              >
+                <Input placeholder="请输入授权码" />
+              </Form.Item>
+              <Alert
+                message="授权码说明"
+                description="授权码用于激活视频生成功能。支持多种时长：1天、7天、30天、90天、180天、365天、永久。授权码过期后需要重新购买。"
+                type="warning"
+                showIcon
+                style={{ marginTop: 16, marginBottom: 24 }}
+              />
+
+              <Divider orientation="left">程序路径配置</Divider>
+              <Form.Item 
+                name="VIDEO_GENERATOR_EXE_PATH" 
+                label="视频生成程序路径"
+                tooltip="视频生成 exe 程序的完整路径"
+              >
+                <Input defaultValue="D:\code\weixin\ai-video\video-generator.exe" />
+              </Form.Item>
+              <Form.Item 
+                name="VIDEO_OUTPUT_PATH" 
+                label="视频输出路径"
+                tooltip="生成的视频保存路径"
+              >
+                <Input defaultValue="D:\code\weixin\ai-trend-publish_web\src\video" />
+              </Form.Item>
+
+              <Divider orientation="left">环境检测</Divider>
+              <Form.Item label="环境状态">
+                <Button onClick={async () => {
+                  // TODO: 调用后端API检测环境
+                  message.info("正在检测环境...");
+                }}>
+                  检测环境
+                </Button>
               </Form.Item>
             </TabPane>
           </Tabs>

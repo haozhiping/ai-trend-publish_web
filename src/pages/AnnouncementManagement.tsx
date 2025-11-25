@@ -30,7 +30,8 @@ import {
   CloseCircleOutlined,
   NotificationOutlined,
   UserOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  SearchOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getApiBaseUrl, getAuthHeaders } from '../utils/api'
@@ -53,8 +54,11 @@ interface Announcement {
 }
 
 const AnnouncementManagement: React.FC = () => {
+  const [allAnnouncements, setAllAnnouncements] = useState<Announcement[]>([])
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(false)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchStatus, setSearchStatus] = useState<string>('')
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
   const [previewVisible, setPreviewVisible] = useState(false)
@@ -92,12 +96,12 @@ const AnnouncementManagement: React.FC = () => {
         message.error(data?.message || '获取公告失败')
         return
       }
-      setAnnouncements(
-        (data.data || []).map((item: any) => ({
-          ...item,
-          readCount: item.readCount ?? 0,
-        }))
-      )
+      const announcementList = (data.data || []).map((item: any) => ({
+        ...item,
+        readCount: item.readCount ?? 0,
+      }))
+      setAllAnnouncements(announcementList)
+      setAnnouncements(announcementList)
     } catch (error) {
       console.error(error)
       message.error('获取公告失败')
