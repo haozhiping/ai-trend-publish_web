@@ -169,19 +169,223 @@ function App() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
   }, [darkMode])
 
+  // 检查是否使用主系统登录（从后端获取配置，默认true）
+  const [useMainSystemAuth, setUseMainSystemAuth] = useState(true)
+  const [mainFrontendUrl, setMainFrontendUrl] = useState('')
+  const [authConfigLoaded, setAuthConfigLoaded] = useState(false)
+
+  // 获取登录配置
+  useEffect(() => {
+    const fetchAuthConfig = async () => {
+      try {
+        const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
+      if (!apiBaseUrl) {
+        console.error('[工作流系统] VITE_API_BASE_URL 未配置')
+        return
+      }
+        const resp = await fetch(`${apiBaseUrl}/auth/config`)
+        const data = await resp.json()
+        
+        if (data.code === 200 && data.data) {
+          setUseMainSystemAuth(data.data.useMainSystemAuth !== false) // 默认true
+          setMainFrontendUrl(data.data.mainFrontendUrl || '')
+        }
+      } catch (error) {
+        console.error('[工作流系统] 获取登录配置失败:', error)
+        // 默认使用主系统登录
+        setUseMainSystemAuth(true)
+      } finally {
+        setAuthConfigLoaded(true)
+      }
+    }
+    
+    fetchAuthConfig()
+  }, [])
+
+  // 防止跳转风暴的标记
+  const markRedirect = () => {
+    sessionStorage.setItem('workflow_last_redirect', `${Date.now()}`)
+  }
+
+  const canRedirect = () => {
+    const last = sessionStorage.getItem('workflow_last_redirect')
+    if (!last) return true
+    return Date.now() - Number(last) > 5000 // 至少5秒间隔，避免跳转风暴
+  }
+
   // 检查认证状态
   useEffect(() => {
+    if (!authConfigLoaded) return // 等待配置加载完成
+    
+    // 检查URL参数中是否有主系统的token（SSO登录）
+    const urlParams = new URLSearchParams(window.location.search)
+    const mainSystemToken = urlParams.get('token')
+    
+    if (mainSystemToken) {
+      console.log('[工作流系统] 检测到主系统token，开始SSO登录')
+      // 保存主系统token
+      localStorage.setItem('token', mainSystemToken)
+      // 清除URL参数（包括token和returnUrl）
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, '', cleanUrl)
+      
+      // 验证token并获取用户信息（会自动同步用户信息到子系统）
+      verifyMainSystemToken(mainSystemToken)
+      return
+    }
+    
+    // 检查是否已经在登录页面，避免循环跳转
+    const currentPath = window.location.pathname
+    const isLoginPage = currentPath === '/login' || currentPath.includes('/login')
+    
+    // 检查URL中是否已经有returnUrl参数，避免重复跳转
+    const hasReturnUrl = urlParams.has('returnUrl')
+    
+    // 检查本地token
     const token = localStorage.getItem('token')
     const savedUserInfo = localStorage.getItem('userInfo')
     
     if (token && savedUserInfo) {
-      setIsAuthenticated(true)
-      setUserInfo(JSON.parse(savedUserInfo))
+      // 验证token是否有效
+      verifyLocalToken(token)
     } else {
+      // 如果没有token，根据配置决定跳转
+      if (useMainSystemAuth) {
+        // 使用主系统登录，跳转到主系统登录页面
+        if (!mainFrontendUrl) {
+          console.error('[工作流系统] 配置为使用主系统登录，但 MAIN_FRONTEND_URL 未配置')
+          setIsAuthenticated(false)
+          setUserInfo(null)
+          return
+        }
+        
+        // 防止跳转风暴和循环跳转
+        if (hasReturnUrl || isLoginPage) {
+          console.warn('[工作流系统] 检测到循环跳转，停止跳转')
+          setIsAuthenticated(false)
+          setUserInfo(null)
+          return
+        }
+        
+        if (!canRedirect()) {
+          console.log('[工作流系统] 最近已跳转过登录，忽略本次跳转')
+          setIsAuthenticated(false)
+          setUserInfo(null)
+          return
+        }
+        
+        // 只使用当前路径作为returnUrl，避免嵌套编码
+        // 使用 pathname 而不是 href，避免包含查询参数
+        const baseUrl = `${window.location.origin}${window.location.pathname}`
+        const returnUrl = encodeURIComponent(baseUrl)
+        markRedirect()
+        window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+      } else {
+        // 使用子系统登录，显示登录页面
+        setIsAuthenticated(false)
+        setUserInfo(null)
+      }
+    }
+  }, [authConfigLoaded, useMainSystemAuth, mainFrontendUrl])
+
+  // 验证本地token
+  const verifyLocalToken = async (token: string) => {
+    try {
+      const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
+      if (!apiBaseUrl) {
+        console.error('[工作流系统] VITE_API_BASE_URL 未配置')
+        return
+      }
+      const resp = await fetch(`${apiBaseUrl}/auth/user`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      const data = await resp.json()
+      
+      if (data.code === 200 && data.data) {
+        setIsAuthenticated(true)
+        setUserInfo(data.data)
+        localStorage.setItem('userInfo', JSON.stringify(data.data))
+      } else {
+        // token无效，清除并重新登录
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+        if (useMainSystemAuth && mainFrontendUrl && canRedirect()) {
+          // 只使用当前路径作为returnUrl，避免嵌套编码
+          const returnUrl = encodeURIComponent(`${window.location.origin}${window.location.pathname}`)
+          markRedirect()
+          window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+        } else {
+          setIsAuthenticated(false)
+          setUserInfo(null)
+        }
+      }
+    } catch (error) {
+      console.error('[工作流系统] 验证token失败:', error)
+      localStorage.removeItem('token')
+      localStorage.removeItem('userInfo')
+      if (useMainSystemAuth && mainFrontendUrl && canRedirect()) {
+        // 只使用当前路径作为returnUrl，避免嵌套编码
+        // 使用 pathname 而不是 href，避免包含查询参数
+        const baseUrl = `${window.location.origin}${window.location.pathname}`
+        const returnUrl = encodeURIComponent(baseUrl)
+        markRedirect()
+        window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+      } else {
+        setIsAuthenticated(false)
+        setUserInfo(null)
+      }
+    }
+  }
+
+  // 验证主系统token
+  const verifyMainSystemToken = async (token: string) => {
+    try {
+      // 调用工作流系统的后端API验证主系统token
+      const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
+      if (!apiBaseUrl) {
+        console.error('[工作流系统] VITE_API_BASE_URL 未配置')
+        return
+      }
+      const resp = await fetch(`${apiBaseUrl}/auth/verify-main-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
+      })
+      
+      const data = await resp.json()
+      
+      if (data.code === 200 && data.data) {
+        // 验证成功，设置用户信息
+        const userInfo = data.data.user || {
+          id: data.data.userId,
+          username: data.data.username,
+          name: data.data.name || data.data.username,
+          role: data.data.role || 'user',
+        }
+        localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        setIsAuthenticated(true)
+        setUserInfo(userInfo)
+        message.success('登录成功').then(() => {})
+      } else {
+        // 验证失败，清除token
+        localStorage.removeItem('token')
+        setIsAuthenticated(false)
+        setUserInfo(null)
+      }
+    } catch (error) {
+      console.error('[工作流系统] 验证主系统token失败:', error)
+      localStorage.removeItem('token')
       setIsAuthenticated(false)
       setUserInfo(null)
     }
-  }, [])
+  }
 
   // 全屏切换
   const toggleFullscreen = () => {
@@ -298,7 +502,8 @@ function App() {
 
   if (currentMenuItem && location.pathname !== '/') {
     breadcrumbItems.push({
-      title: currentMenuItem.breadcrumb
+      title: <span>{currentMenuItem.breadcrumb}</span>,
+      onClick: () => {}
     })
   }
 
@@ -321,7 +526,7 @@ function App() {
       onClick: () => setThemeVisible(true)
     },
     {
-      type: 'divider'
+      type: 'divider' as const
     },
     {
       key: 'help',
@@ -335,7 +540,7 @@ function App() {
       onClick: () => window.open('https://github.com', '_blank')
     },
     {
-      type: 'divider'
+      type: 'divider' as const
     },
     {
       key: 'logout',
@@ -354,8 +559,71 @@ function App() {
     document.documentElement.style.setProperty('--ant-primary-color', preset.token.colorPrimary)
   }, [currentTheme])
 
-  // 如果未认证，显示登录页面
+  // 如果未认证，根据配置显示登录页面或跳转到主系统
   if (!isAuthenticated) {
+    // 如果配置为使用主系统登录，且配置已加载，则跳转到主系统
+    // 注意：跳转逻辑在 useEffect 中处理，这里只显示加载状态
+    if (authConfigLoaded && useMainSystemAuth && mainFrontendUrl) {
+      // 检查是否已经在跳转过程中（URL中有returnUrl参数）
+      const urlParams = new URLSearchParams(window.location.search)
+      const hasReturnUrl = urlParams.has('returnUrl')
+      const hasToken = urlParams.has('token')
+      
+      // 如果有token参数，说明是从主系统跳转回来的，等待token验证
+      if (hasToken) {
+        return (
+          <ConfigProvider theme={themeConfig}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '100vh',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div>正在验证登录信息...</div>
+            </div>
+          </ConfigProvider>
+        )
+      }
+      
+      // 如果已经有returnUrl，说明已经在跳转过程中，显示加载状态
+      if (hasReturnUrl) {
+        return (
+          <ConfigProvider theme={themeConfig}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '100vh',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div>正在跳转到登录页面...</div>
+            </div>
+          </ConfigProvider>
+        )
+      }
+      
+      // 如果没有returnUrl，说明是首次访问，跳转逻辑在useEffect中处理
+      // 这里只显示加载状态，避免显示登录界面
+      return (
+        <ConfigProvider theme={themeConfig}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100vh',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            <div>正在加载...</div>
+          </div>
+        </ConfigProvider>
+      )
+    }
+    
+    // 如果配置为使用子系统登录，或配置未加载完成，显示登录页面
     return (
       <ConfigProvider theme={themeConfig}>
         <Login onLogin={handleLogin} />

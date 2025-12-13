@@ -524,7 +524,10 @@ const WorkflowManagement: React.FC = () => {
             <Input.TextArea placeholder="请输入工作流描述" />
           </Form.Item>
 
-          {workflowType === 'video-generate-workflow' && (
+          <Form.Item noStyle shouldUpdate={(prev, cur) => prev.type !== cur.type}>
+            {({ getFieldValue }) => {
+              const workflowType = getFieldValue('type');
+              return workflowType === 'video-generate-workflow' && (
             <>
               <Form.Item
                 name={['config', 'dingtalkKeyword']}
@@ -556,8 +559,10 @@ const WorkflowManagement: React.FC = () => {
                   <Option value="zh-CN-XiaoyiNeural">晓伊（女声）</Option>
                 </Select>
               </Form.Item>
-            </>
-          )}
+              </>
+            );
+            }}
+          </Form.Item>
         </Form>
       </Modal>
     </div>

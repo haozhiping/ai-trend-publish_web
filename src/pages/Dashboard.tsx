@@ -927,7 +927,14 @@ const Dashboard: React.FC = () => {
         {/* 最近活动 */}
         <Col xs={24} lg={12}>
           <Card
-            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            style={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
             bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }} 
             title={
               <Flex align="center" gap={8}>
@@ -943,11 +950,6 @@ const Dashboard: React.FC = () => {
                 <Button size="small" type="link" onClick={() => handleNavigate('/system-logs')}>查看全部</Button>
               </Space>
             }
-            style={{
-              borderRadius: 12,
-              border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
-            }}
           >
             <List
               dataSource={recentActivities.slice(0, 5)}
@@ -995,7 +997,15 @@ const Dashboard: React.FC = () => {
         {/* API 额度监控 */}
         <Col xs={24} lg={12}>
           <Card
-            style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 400 }}
+            style={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              minHeight: 400,
+              borderRadius: 12,
+              border: `1px solid ${token.colorBorderSecondary}`,
+              boxShadow: token.boxShadowTertiary
+            }}
             bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }} 
             title={
               <Flex align="center" gap={8}>
@@ -1011,11 +1021,6 @@ const Dashboard: React.FC = () => {
                 <Button size="small" type="link" onClick={() => handleNavigate('/data-sources')}>管理配置</Button>
               </Space>
             }
-            style={{
-              borderRadius: 12,
-              border: `1px solid ${token.colorBorderSecondary}`,
-              boxShadow: token.boxShadowTertiary
-            }}
           >
             <Flex vertical gap={20}>
               {apiQuotas.slice(0, 5).map((quota, index) => {
