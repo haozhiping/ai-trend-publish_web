@@ -288,38 +288,135 @@ function App() {
     }
   }, [authConfigLoaded, useMainSystemAuth, mainFrontendUrl])
 
-  // 验证本地token
+  // 验证本地token（如果使用主系统登录，验证主系统token；否则验证子系统token）
   const verifyLocalToken = async (token: string) => {
     try {
-      const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
-      if (!apiBaseUrl) {
-        console.error('[工作流系统] VITE_API_BASE_URL 未配置')
-        return
-      }
-      const resp = await fetch(`${apiBaseUrl}/auth/user`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      const data = await resp.json()
-      
-      if (data.code === 200 && data.data) {
-        setIsAuthenticated(true)
-        setUserInfo(data.data)
-        localStorage.setItem('userInfo', JSON.stringify(data.data))
-      } else {
-        // token无效，清除并重新登录
-        localStorage.removeItem('token')
-        localStorage.removeItem('userInfo')
-        if (useMainSystemAuth && mainFrontendUrl && canRedirect()) {
-          // 只使用当前路径作为returnUrl，避免嵌套编码
-          const returnUrl = encodeURIComponent(`${window.location.origin}${window.location.pathname}`)
-          markRedirect()
-          window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+      // 如果使用主系统登录，验证主系统token
+      if (useMainSystemAuth) {
+        const mainApiUrl = (import.meta as any).env?.VITE_MAIN_API_URL || mainFrontendUrl?.replace(':3333', ':6688').replace(':3334', ':6688')
+        if (!mainApiUrl) {
+          console.error('[工作流系统] 主系统API URL未配置')
+          return
+        }
+        
+        // 验证主系统token
+        const resp = await fetch(`${mainApiUrl}/user/profile`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        const data = await resp.json()
+        
+        if (data.code === 200 && data.data) {
+          // 检查用户是否切换（比较用户ID）
+          const currentUserId = userInfo?.id || userInfo?.userId
+          const newUserId = data.data.id || data.data.userId
+          
+          if (currentUserId && currentUserId !== newUserId) {
+            console.log('[工作流系统] 检测到用户切换，清除token并重新登录')
+            localStorage.removeItem('token')
+            localStorage.removeItem('userInfo')
+            if (mainFrontendUrl && canRedirect()) {
+              const baseUrl = `${window.location.origin}${window.location.pathname}`
+              const returnUrl = encodeURIComponent(baseUrl)
+              markRedirect()
+              window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+            }
+            return
+          }
+          
+          // 同步用户信息到子系统
+          const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
+          if (apiBaseUrl) {
+            try {
+              // 验证并同步用户信息到子系统
+              const syncResp = await fetch(`${apiBaseUrl}/auth/verify-main-token`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token }),
+              })
+              const syncData = await syncResp.json()
+              
+              if (syncData.code === 200 && syncData.data) {
+                const userInfo = syncData.data.user || {
+                  id: syncData.data.userId,
+                  username: syncData.data.username,
+                  name: syncData.data.name || syncData.data.username,
+                  role: syncData.data.role || 'user',
+                }
+                localStorage.setItem('userInfo', JSON.stringify(userInfo))
+                setIsAuthenticated(true)
+                setUserInfo(userInfo)
+              }
+            } catch (syncError) {
+              console.error('[工作流系统] 同步用户信息失败:', syncError)
+              // 即使同步失败，也使用主系统的用户信息
+              const userInfo = {
+                id: data.data.id || data.data.userId,
+                username: data.data.username,
+                name: data.data.name || data.data.username,
+                role: data.data.role || 'user',
+              }
+              localStorage.setItem('userInfo', JSON.stringify(userInfo))
+              setIsAuthenticated(true)
+              setUserInfo(userInfo)
+            }
+          } else {
+            // 如果没有子系统API，直接使用主系统用户信息
+            const userInfo = {
+              id: data.data.id || data.data.userId,
+              username: data.data.username,
+              name: data.data.name || data.data.username,
+              role: data.data.role || 'user',
+            }
+            localStorage.setItem('userInfo', JSON.stringify(userInfo))
+            setIsAuthenticated(true)
+            setUserInfo(userInfo)
+          }
         } else {
+          // token无效，清除并重新登录
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
+          if (mainFrontendUrl && canRedirect()) {
+            const baseUrl = `${window.location.origin}${window.location.pathname}`
+            const returnUrl = encodeURIComponent(baseUrl)
+            markRedirect()
+            window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+          } else {
+            setIsAuthenticated(false)
+            setUserInfo(null)
+          }
+        }
+      } else {
+        // 使用子系统登录，验证子系统token
+        const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL
+        if (!apiBaseUrl) {
+          console.error('[工作流系统] VITE_API_BASE_URL 未配置')
+          return
+        }
+        const resp = await fetch(`${apiBaseUrl}/auth/user`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        const data = await resp.json()
+        
+        if (data.code === 200 && data.data) {
+          setIsAuthenticated(true)
+          setUserInfo(data.data)
+          localStorage.setItem('userInfo', JSON.stringify(data.data))
+        } else {
+          // token无效，清除并重新登录
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
           setIsAuthenticated(false)
           setUserInfo(null)
         }
@@ -329,8 +426,6 @@ function App() {
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
       if (useMainSystemAuth && mainFrontendUrl && canRedirect()) {
-        // 只使用当前路径作为returnUrl，避免嵌套编码
-        // 使用 pathname 而不是 href，避免包含查询参数
         const baseUrl = `${window.location.origin}${window.location.pathname}`
         const returnUrl = encodeURIComponent(baseUrl)
         markRedirect()
@@ -450,12 +545,23 @@ function App() {
   }
 
   const handleLogout = () => {
+    // 清除本地存储
     localStorage.removeItem('token')
     localStorage.removeItem('userInfo')
-    setIsAuthenticated(false)
-    setUserInfo(null)
-    navigate('/')
-    message.success('已安全退出')
+    sessionStorage.removeItem('workflow_last_redirect')
+    
+    // 如果使用主系统登录，跳转到主系统登录页面（主系统会清除token）
+    if (useMainSystemAuth && mainFrontendUrl) {
+      // 跳转到主系统登录页面，主系统会检查token并清除
+      // 不传returnUrl，让用户在主系统登录后选择要访问的系统
+      window.location.href = `${mainFrontendUrl}/login`
+    } else {
+      // 使用子系统登录，只清除子系统token
+      setIsAuthenticated(false)
+      setUserInfo(null)
+      navigate('/')
+      message.success('已安全退出')
+    }
   }
 
   const handleUpdateUser = (updatedUser: any) => {
@@ -466,6 +572,73 @@ function App() {
   const handleRefresh = () => {
     window.location.reload()
   }
+
+  // 定期检查用户切换（如果使用主系统登录）
+  useEffect(() => {
+    if (!useMainSystemAuth || !isAuthenticated) return
+    
+    // 每30秒检查一次用户是否切换
+    const checkUserSwitch = setInterval(() => {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      
+      const mainApiUrl = (import.meta as any).env?.VITE_MAIN_API_URL || mainFrontendUrl?.replace(':3333', ':6688').replace(':3334', ':6688')
+      if (!mainApiUrl) return
+      
+      // 验证主系统token并检查用户ID
+      fetch(`${mainApiUrl}/user/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(resp => resp.json())
+      .then(data => {
+        if (data.code === 200 && data.data) {
+          const currentUserId = userInfo?.id || userInfo?.userId
+          const newUserId = data.data.id || data.data.userId
+          
+          // 如果用户ID变化，说明主系统切换了用户
+          if (currentUserId && currentUserId !== newUserId) {
+            console.log('[工作流系统] 检测到主系统用户切换，清除token并重新登录')
+            localStorage.removeItem('token')
+            localStorage.removeItem('userInfo')
+            sessionStorage.removeItem('workflow_last_redirect')
+            setIsAuthenticated(false)
+            setUserInfo(null)
+            
+            if (mainFrontendUrl && canRedirect()) {
+              const baseUrl = `${window.location.origin}${window.location.pathname}`
+              const returnUrl = encodeURIComponent(baseUrl)
+              markRedirect()
+              window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+            }
+          }
+        } else {
+          // token无效，清除并重新登录
+          console.log('[工作流系统] 定期检查发现token无效，清除并重新登录')
+          localStorage.removeItem('token')
+          localStorage.removeItem('userInfo')
+          sessionStorage.removeItem('workflow_last_redirect')
+          setIsAuthenticated(false)
+          setUserInfo(null)
+          
+          if (mainFrontendUrl && canRedirect()) {
+            const baseUrl = `${window.location.origin}${window.location.pathname}`
+            const returnUrl = encodeURIComponent(baseUrl)
+            markRedirect()
+            window.location.href = `${mainFrontendUrl}/login?returnUrl=${returnUrl}`
+          }
+        }
+      })
+      .catch(error => {
+        console.error('[工作流系统] 定期检查用户切换失败:', error)
+      })
+    }, 30000) // 每30秒检查一次
+    
+    return () => clearInterval(checkUserSwitch)
+  }, [useMainSystemAuth, isAuthenticated, userInfo, mainFrontendUrl])
 
   // 键盘快捷键
   useEffect(() => {
@@ -660,8 +833,8 @@ function App() {
               </div>
               {!collapsed && (
                 <div className="logo-text">
-                  <Text className="logo-title">TrendPublish</Text>
-                  <Text className="logo-subtitle">AI趋势发布系统</Text>
+                  <Text className="logo-title">IQPublish</Text>
+                  <Text className="logo-subtitle">智能发布系统</Text>
                 </div>
               )}
             </Flex>

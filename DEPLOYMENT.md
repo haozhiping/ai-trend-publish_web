@@ -1,8 +1,8 @@
-# TrendPublish 部署指南
+# IQPublish 部署指南
 
 ## 📋 部署概览
 
-本文档详细说明了 TrendPublish 前端项目的部署流程，包括开发环境、测试环境和生产环境的配置。
+本文档详细说明了 IQPublish 前端项目的部署流程，包括开发环境、测试环境和生产环境的配置。
 
 ## 🛠 环境要求
 
@@ -28,7 +28,7 @@
 
 ```env
 # 应用配置
-VITE_APP_TITLE=TrendPublish 管理系统 (开发)
+VITE_APP_TITLE=IQPublish 管理系统 (开发)
 VITE_APP_VERSION=1.0.0-dev
 VITE_APP_ENV=development
 
@@ -50,12 +50,12 @@ VITE_ANALYTICS_ID=
 
 ```env
 # 应用配置
-VITE_APP_TITLE=TrendPublish 管理系统 (测试)
+VITE_APP_TITLE=IQPublish 管理系统 (测试)
 VITE_APP_VERSION=1.0.0-staging
 VITE_APP_ENV=staging
 
 # API配置
-VITE_API_BASE_URL=https://api-staging.trendpublish.com/api
+VITE_API_BASE_URL=https://api-staging.iqpublish.cn/api
 VITE_API_TIMEOUT=30000
 
 # 功能开关
@@ -72,12 +72,12 @@ VITE_ANALYTICS_ID=GA-STAGING-ID
 
 ```env
 # 应用配置
-VITE_APP_TITLE=TrendPublish 管理系统
+VITE_APP_TITLE=IQPublish 管理系统
 VITE_APP_VERSION=1.0.0
 VITE_APP_ENV=production
 
 # API配置
-VITE_API_BASE_URL=https://api.trendpublish.com/api
+VITE_API_BASE_URL=https://api.iqpublish.cn/api
 VITE_API_TIMEOUT=30000
 
 # 功能开关
@@ -90,8 +90,8 @@ VITE_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
 VITE_ANALYTICS_ID=GA-PRODUCTION-ID
 
 # CDN配置
-VITE_CDN_URL=https://cdn.trendpublish.com
-VITE_STATIC_URL=https://static.trendpublish.com
+VITE_CDN_URL=https://cdn.iqpublish.cn
+VITE_STATIC_URL=https://static.iqpublish.cn
 ```
 
 ### 构建脚本配置
@@ -175,7 +175,7 @@ npm run build
 
 #### 2. Nginx 配置
 
-创建 `/etc/nginx/sites-available/trendpublish` 配置文件：
+创建 `/etc/nginx/sites-available/iqpublish` 配置文件：
 
 ```nginx
 server {
@@ -200,7 +200,7 @@ server {
     ssl_prefer_server_ciphers off;
     
     # 网站根目录
-    root /var/www/trendpublish;
+    root /var/www/iqpublish;
     index index.html;
     
     # 安全头
@@ -208,7 +208,7 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.trendpublish.com;" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.iqpublish.cn;" always;
     
     # Gzip 压缩
     gzip on;
@@ -289,7 +289,7 @@ server {
 
 ```bash
 # 创建软链接
-sudo ln -s /etc/nginx/sites-available/trendpublish /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/iqpublish /etc/nginx/sites-enabled/
 
 # 测试配置
 sudo nginx -t
@@ -306,9 +306,9 @@ sudo systemctl reload nginx
 #!/bin/bash
 
 # 部署配置
-PROJECT_NAME="trendpublish"
-DEPLOY_PATH="/var/www/trendpublish"
-BACKUP_PATH="/var/backups/trendpublish"
+PROJECT_NAME="iqpublish"
+DEPLOY_PATH="/var/www/iqpublish"
+BACKUP_PATH="/var/backups/iqpublish"
 BUILD_PATH="./dist"
 
 # 颜色输出
@@ -516,11 +516,11 @@ http {
 version: '3.8'
 
 services:
-  trendpublish-frontend:
+  iqpublish-frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: trendpublish-frontend
+    container_name: iqpublish-frontend
     restart: unless-stopped
     ports:
       - "80:80"
@@ -529,7 +529,7 @@ services:
     volumes:
       - ./logs:/var/log/nginx
     networks:
-      - trendpublish-network
+      - iqpublish-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -538,7 +538,7 @@ services:
       start_period: 40s
 
 networks:
-  trendpublish-network:
+  iqpublish-network:
     driver: bridge
 
 volumes:
@@ -554,9 +554,9 @@ volumes:
 #!/bin/bash
 
 # Docker 部署脚本
-PROJECT_NAME="trendpublish-frontend"
-IMAGE_NAME="trendpublish/frontend"
-CONTAINER_NAME="trendpublish-frontend"
+PROJECT_NAME="iqpublish-frontend"
+IMAGE_NAME="iqpublish/frontend"
+CONTAINER_NAME="iqpublish-frontend"
 
 # 构建镜像
 echo "构建 Docker 镜像..."
@@ -816,7 +816,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd /var/www/trendpublish
+          cd /var/www/iqpublish
           sudo systemctl stop nginx
           sudo rm -rf *
           
@@ -827,7 +827,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         source: "dist/*"
-        target: "/var/www/trendpublish"
+        target: "/var/www/iqpublish"
         strip_components: 1
         
     - name: Restart services
@@ -837,7 +837,7 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          sudo chown -R www-data:www-data /var/www/trendpublish
+          sudo chown -R www-data:www-data /var/www/iqpublish
           sudo systemctl start nginx
           sudo systemctl reload nginx
 

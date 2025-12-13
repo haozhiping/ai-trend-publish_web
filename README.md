@@ -1079,8 +1079,8 @@ class WorkflowService {
 创建 `.env.production` 文件：
 
 ```env
-VITE_API_BASE_URL=https://api.trendpublish.com
-VITE_APP_TITLE=TrendPublish 管理系统
+VITE_API_BASE_URL=https://api.iqpublish.cn
+VITE_APP_TITLE=IQPublish 管理系统
 VITE_APP_VERSION=1.0.0
 ```
 
@@ -1100,7 +1100,7 @@ npm run build
 server {
     listen 80;
     server_name your-domain.com;
-    root /var/www/trendpublish;
+    root /var/www/iqpublish;
     index index.html;
     
     # 前端路由支持
